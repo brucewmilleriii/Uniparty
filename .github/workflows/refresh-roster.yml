@@ -1,0 +1,43 @@
+name: Refresh roster
+
+# Pull the roster daily. The ingest validates the data first and exits non-zero
+# (failing this job, which GitHub emails you about) rather than publish a bad file.
+on:
+  schedule:
+    - cron: "17 11 * * *" # 11:17 UTC, after the upstream dataset's morning updates
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-roster
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch, validate and write the roster
+        run: npm run ingest:roster
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - run: npm test
+      - name: Commit the new snapshot if it changed
+        run: |
+          if git diff --quiet data/roster.json; then
+            echo "Roster unchanged."
+            exit 0
+          fi
+          git config user.name "uniparty-bot"
+          git config user.email "uniparty-bot@users.noreply.github.com"
+          git add data/roster.json
+          git commit -m "Refresh roster from congress-legislators"
+          git push
