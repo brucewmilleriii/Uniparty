@@ -29,7 +29,7 @@ interface RawTerm {
 }
 
 export interface RawLegislator {
-  id: { bioguide: string; fec?: string[] };
+  id: { bioguide: string; fec?: string[]; lis?: string };
   name: { first: string; last: string; official_full?: string };
   bio?: { birthday?: string };
   terms: RawTerm[];
@@ -95,6 +95,7 @@ export function transformRoster(
       office: term.address ?? null,
       birthday: l.bio?.birthday ?? null,
       fecIds: l.id.fec ?? [],
+      lisId: l.id.lis ?? null,
       committees: seats.get(l.id.bioguide) ?? [],
     };
   });
@@ -117,6 +118,8 @@ export function validateRoster(members: Member[], today = new Date()): string[] 
     if (!m.name || !m.state) errors.push(`${m.bioguideId} is missing a name or state`);
     if (!PARTY_CODES[m.partyName]) errors.push(`${m.bioguideId} has unrecognised party "${m.partyName}"`);
     if (new Date(m.termEnd) < today) errors.push(`${m.bioguideId} has a term that ended ${m.termEnd}`);
+    // Senate.gov vote files identify senators only by LIS id, so a senator without one would lose their votes.
+    if (m.chamber === "senate" && !m.lisId) errors.push(`Senator ${m.bioguideId} has no LIS id`);
   }
 
   const senators = members.filter((m) => m.chamber === "senate");

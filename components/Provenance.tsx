@@ -1,17 +1,27 @@
 import { fmtDate } from "@/lib/format";
-import type { Roster } from "@/lib/data";
+
+export interface ProvenanceInfo {
+  source: string;
+  sourceHome: string;
+  /** Null when the dataset hasn't been pulled yet. */
+  fetchedAt: string | null;
+}
 
 /** The "where this came from and when" line shown under every dataset. */
-export default function Provenance({ roster, what = "Roster and committees" }: { roster: Roster; what?: string }) {
+export default function Provenance({ data, what = "Roster and committees" }: { data: ProvenanceInfo; what?: string }) {
   return (
     <div className="prov">
       <span className="ok" aria-hidden="true" />
       <span>
-        {what} from <a href={roster.sourceHome} target="_blank" rel="noopener">{roster.source}</a>
+        {what} from <a href={data.sourceHome} target="_blank" rel="noopener">{data.source}</a>
       </span>
-      <span>
-        Pulled <time dateTime={roster.fetchedAt}>{fmtDate(roster.fetchedAt)}</time> · checked daily
-      </span>
+      {data.fetchedAt ? (
+        <span>
+          Pulled <time dateTime={data.fetchedAt}>{fmtDate(data.fetchedAt)}</time> · checked daily
+        </span>
+      ) : (
+        <span>Not pulled yet</span>
+      )}
     </div>
   );
 }

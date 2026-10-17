@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRoster } from "@/lib/data";
+import { getRoster, votesStatus } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +10,6 @@ export async function GET() {
     ok: true,
     backend: roster.backend,
     roster: { members: roster.members.length, fetchedAt: roster.fetchedAt, source: roster.source },
+    votes: votesStatus(),
   });
 }

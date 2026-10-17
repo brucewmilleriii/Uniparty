@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { RosterSnapshot } from "@/lib/types";
+import type { RosterSnapshot, Vote } from "@/lib/types";
 
 /**
  * Upsert a validated roster into Supabase and record the run in ingest_runs.
@@ -33,6 +33,7 @@ export async function writeRosterToSupabase(url: string, serviceKey: string, sna
     office: m.office,
     birthday: m.birthday,
     fec_ids: m.fecIds,
+    lis_id: m.lisId,
     in_office: true,
     source_url: sourceUrl,
     fetched_at: fetchedAt,
@@ -58,6 +59,56 @@ export async function writeRosterToSupabase(url: string, serviceKey: string, sna
     status: "ok",
     record_count: rows.length,
     source_files: files,
+  });
+  return rows.length;
+}
+
+/**
+ * Upsert roll-call votes and every member's position on them, and record the run.
+ * Older votes that have left the snapshot's window stay in the database as history.
+ */
+export async function writeVotesToSupabase(url: string, serviceKey: string, votes: Vote[], fetchedAt: string): Promise<number> {
+  const db = createClient(url, serviceKey, { auth: { persistSession: false } });
+
+  const fail = async (step: string, message: string): Promise<never> => {
+    await db.from("ingest_runs").insert({ source: "votes", fetched_at: fetchedAt, status: "failed", error: `${step}: ${message}` });
+    throw new Error(`Supabase ${step} failed: ${message}`);
+  };
+
+  const rows = votes.map((v) => ({
+    id: v.id,
+    chamber: v.chamber,
+    congress: v.congress,
+    session: v.session,
+    roll_number: v.rollNumber,
+    vote_date: v.date,
+    vote_time: v.time,
+    question: v.question,
+    description: v.description,
+    measure: v.measure,
+    measure_url: v.measureUrl,
+    result: v.result,
+    totals: v.totals,
+    page_url: v.pageUrl,
+    source_url: v.sourceUrl,
+    sha256: v.sha256,
+    fetched_at: v.fetchedAt,
+  }));
+  const up = await db.from("votes").upsert(rows, { onConflict: "id" });
+  if (up.error) await fail("votes upsert", up.error.message);
+
+  const positions = votes.flatMap((v) => Object.entries(v.positions).map(([bioguide_id, position]) => ({ vote_id: v.id, bioguide_id, position })));
+  for (let i = 0; i < positions.length; i += 5000) {
+    const res = await db.from("vote_positions").upsert(positions.slice(i, i + 5000), { onConflict: "vote_id,bioguide_id" });
+    if (res.error) await fail("vote_positions upsert", res.error.message);
+  }
+
+  await db.from("ingest_runs").insert({
+    source: "votes",
+    fetched_at: fetchedAt,
+    status: "ok",
+    record_count: rows.length,
+    source_files: votes.map((v) => ({ url: v.sourceUrl, sha256: v.sha256 })),
   });
   return rows.length;
 }
