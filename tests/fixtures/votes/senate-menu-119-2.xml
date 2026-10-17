@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><vote_summary>
+  <congress>119</congress>
+  <session>2</session>
+  <congress_year>2026</congress_year>
+  <votes>
+    <vote>
+      <vote_number>00256</vote_number>
+      <vote_date>30-Sep</vote_date>
+      <issue>PN1129</issue>
+      <question>On the Nomination
+         </question>
+      <result>Confirmed</result>
+      <vote_tally>
+        <yeas>47</yeas>
+        <nays>41</nays>
+      </vote_tally>
+      <title>Confirmation: Keith Sonderling, of F.L., to be Secretary of Labor</title>
+    </vote>
+    <vote>
+      <vote_number>00255</vote_number>
+      <vote_date>30-Sep</vote_date>
+      <issue>PN1129</issue>
+      <question>On the Cloture Motion
+         </question>
+      <result>Agreed to</result>
+      <vote_tally>
+        <yeas>53</yeas>
+        <nays>47</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture: Keith Sonderling to be Secretary of Labor</title>
+    </vote>
+    <vote>
+      <vote_number>00254</vote_number>
+      <vote_date>30-Sep</vote_date>
+      <issue>H.R. 9340</issue>
+      <question>On Cloture on the Motion to Proceed
+         </question>
+      <result>Rejected</result>
+      <vote_tally>
+        <yeas>57</yeas>
+        <nays>43</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture on the Motion to Proceed to H.R. 9340; A bill to amend the Public Utility Regulatory Policies Act of 1978 to establish a Federal standard relating to the recovery of the full, incremental costs of upgrades that serve large-load customers, and for other purposes.</title>
+    </vote>
+    <vote>
+      <vote_number>00253</vote_number>
+      <vote_date>30-Sep</vote_date>
+      <issue>H.R. 7008</issue>
+      <question>On Cloture on the Motion to Proceed
+         </question>
+      <result>Rejected</result>
+      <vote_tally>
+        <yeas>53</yeas>
+        <nays>47</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture on the Motion to Proceed: H.R. 7008; A bill to amend chapter 131 of title 5 to require certain restrictions on stocks for Members of Congress and their spouses and dependents, and for other purposes.</title>
+    </vote>
+    <vote>
+      <vote_number>00252</vote_number>
+      <vote_date>29-Sep</vote_date>
+      <issue>S.Res. 852</issue>
+      <question>On the Motion to Discharge
+         </question>
+      <result>Rejected</result>
+      <vote_tally>
+        <yeas>47</yeas>
+        <nays>51</nays>
+      </vote_tally>
+      <title>Motion to Discharge S. Res. 852; A resolution requesting information on Israel's human rights practices pursuant to section 502B(c) of the Foreign Assistance Act of 1961.</title>
+    </vote>
+  </votes>
+</vote_summary>

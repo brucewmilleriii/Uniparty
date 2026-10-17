@@ -158,3 +158,8 @@ body{margin:0}
 .welcome{padding:28px 24px;display:grid;gap:12px}
 .welcome h1{margin:0}
 .welcome p{margin:0;color:var(--ink-2);max-width:64ch}
+.more{margin-top:12px}
+.more summary{cursor:pointer;font-size:13px;color:var(--ink-2);padding:6px 0}
+.legend .vchip{min-width:0}
+.votes .vm{min-width:220px}
+@media (max-width:600px){.votes th:nth-child(2),.votes td:nth-child(2){display:none}.votes .vm{min-width:150px}.votes .tally .t{width:32px}}

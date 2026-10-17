@@ -1,0 +1,58 @@
+name: Refresh votes
+
+# Pull new roll-call votes from the House Clerk and Senate.gov. Each vote is
+# checked against the chamber's official totals first; the ingest exits non-zero
+# (failing this job, which GitHub emails you about) rather than publish a bad file.
+on:
+  schedule:
+    - cron: "37 4,16 * * *" # twice a day: after late-night votes, and mid-session
+  workflow_dispatch:
+  # Pull straight away when a change to the votes ingest lands on main.
+  push:
+    branches: [main]
+    paths: [scripts/ingest-votes.ts, lib/ingest/votes.ts, .github/workflows/refresh-votes.yml]
+  # On pull requests that touch the ingest, fetch and validate the live sources without writing anything.
+  pull_request:
+    paths: [scripts/ingest-votes.ts, lib/ingest/votes.ts, .github/workflows/refresh-votes.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-votes-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the live sources (pull requests)
+        if: github.event_name == 'pull_request'
+        run: npm run ingest:votes -- --check
+      - name: Fetch, validate and write votes
+        if: github.event_name != 'pull_request'
+        run: npm run ingest:votes
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - run: npm test
+      - name: Commit the new snapshot if it changed
+        if: github.event_name != 'pull_request'
+        run: |
+          if git diff --quiet data/votes.json; then
+            echo "No new votes."
+            exit 0
+          fi
+          git config user.name "uniparty-bot"
+          git config user.email "uniparty-bot@users.noreply.github.com"
+          git add data/votes.json
+          git commit -m "Refresh roll-call votes from the House Clerk and Senate.gov"
+          # The roster job may have pushed in the meantime; the two touch different files.
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -9,9 +9,9 @@ export default async function Home() {
         <h1>Find your representatives</h1>
         <p>
           Search {roster.members.length} sitting members of Congress by name, state or district. Each profile shows their seat,
-          term and committee assignments, with links to the official record for votes, bills, campaign money and stock trades.
+          term, committee assignments and recent roll-call votes, with links to the official record for bills, campaign money and stock trades.
         </p>
-        <Provenance roster={roster} />
+        <Provenance data={roster} />
       </div>
     </div>
   );

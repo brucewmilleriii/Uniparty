@@ -2,7 +2,7 @@
  "provenance": {
   "source": "unitedstates/congress-legislators",
   "sourceHome": "https://github.com/unitedstates/congress-legislators",
-  "fetchedAt": "2026-10-17T02:51:31.449Z",
+  "fetchedAt": "2026-10-17T04:00:36.622Z",
   "files": [
    {
     "url": "https://raw.githubusercontent.com/unitedstates/congress-legislators/gh-pages/legislators-current.json",
@@ -52,6 +52,7 @@
    "fecIds": [
     "H4NC12100"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -84,6 +85,7 @@
    "fecIds": [
     "H6AL04098"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -111,6 +113,7 @@
    "fecIds": [
     "H2CA31125"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -138,6 +141,7 @@
    "fecIds": [
     "H2MO04207"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -170,6 +174,7 @@
    "fecIds": [
     "H2GA12121"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -202,6 +207,7 @@
    "fecIds": [
     "S4MD00327"
    ],
+   "lisId": "S428",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -244,6 +250,7 @@
    "fecIds": [
     "H4RI01265"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -283,6 +290,7 @@
     "H1NV02017",
     "S0NV00237"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -315,6 +323,7 @@
    "fecIds": [
     "H4AZ03109"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -345,6 +354,7 @@
    "office": "330 Hart Senate Office Building Washington DC 20510",
    "birthday": "1962-07-11",
    "fecIds": [],
+   "lisId": "S440",
    "committees": [
     {
      "committeeId": "SSHR",
@@ -377,6 +387,7 @@
    "fecIds": [
     "H6TX19099"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -414,6 +425,7 @@
    "fecIds": [
     "H0MA04192"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -441,6 +453,7 @@
    "fecIds": [
     "H6TX02079"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -473,6 +486,7 @@
    "fecIds": [
     "H6NE02125"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -505,6 +519,7 @@
    "fecIds": [
     "H8IN04199"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -542,6 +557,7 @@
    "fecIds": [
     "H8OH12180"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -570,6 +586,7 @@
     "H8WI00018",
     "S2WI00219"
    ],
+   "lisId": "S354",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -607,6 +624,7 @@
    "fecIds": [
     "H2VT01076"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -640,6 +658,7 @@
     "H6IN03229",
     "S4IN00196"
    ],
+   "lisId": "S429",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -683,6 +702,7 @@
     "H0KY06104",
     "S6KY00286"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -720,6 +740,7 @@
    "fecIds": [
     "H6CA44103"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -747,6 +768,7 @@
    "fecIds": [
     "S6WY00068"
    ],
+   "lisId": "S317",
    "committees": [
     {
      "committeeId": "SSEG",
@@ -784,6 +806,7 @@
    "fecIds": [
     "H2MI07123"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -816,6 +839,7 @@
    "fecIds": [
     "H4WA05234"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -853,6 +877,7 @@
    "fecIds": [
     "H2FL04211"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -880,6 +905,7 @@
    "fecIds": [
     "H2OH03125"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -907,6 +933,7 @@
    "fecIds": [
     "H2AK01083"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -945,6 +972,7 @@
     "H4MO01134",
     "S4MO00250"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -982,6 +1010,7 @@
    "fecIds": [
     "S0CO00211"
    ],
+   "lisId": "S330",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -1024,6 +1053,7 @@
    "fecIds": [
     "H0OR02127"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -1056,6 +1086,7 @@
    "fecIds": [
     "H0CA03078"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HLIG",
@@ -1088,6 +1119,7 @@
    "fecIds": [
     "H6MI01226"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -1125,6 +1157,7 @@
    "fecIds": [
     "H4VA08224"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -1157,6 +1190,7 @@
    "fecIds": [
     "H0OK05205"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -1189,6 +1223,7 @@
    "fecIds": [
     "H6AZ05083"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -1221,6 +1256,7 @@
    "fecIds": [
     "H4SC01313"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -1258,6 +1294,7 @@
    "fecIds": [
     "H6FL09070"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -1290,6 +1327,7 @@
    "fecIds": [
     "H2GA02031"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -1318,6 +1356,7 @@
     "H2TN06030",
     "S8TN00337"
    ],
+   "lisId": "S396",
    "committees": [
     {
      "committeeId": "SSCM",
@@ -1365,6 +1404,7 @@
    "fecIds": [
     "H6GA13062"
    ],
+   "lisId": null,
    "committees": []
   },
   {
@@ -1386,6 +1426,7 @@
    "fecIds": [
     "S0CT00177"
    ],
+   "lisId": "S341",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -1434,6 +1475,7 @@
     "H6DE00206",
     "S4DE00060"
    ],
+   "lisId": "S430",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -1476,6 +1518,7 @@
    "fecIds": [
     "H0CO03165"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -1508,6 +1551,7 @@
    "fecIds": [
     "H2OR01133"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -1540,6 +1584,7 @@
    "fecIds": [
     "S4NJ00185"
    ],
+   "lisId": "S370",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -1583,6 +1628,7 @@
     "H2AR03176",
     "S0AR00150"
    ],
+   "lisId": "S343",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -1635,6 +1681,7 @@
    "fecIds": [
     "H4IL12060"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -1672,6 +1719,7 @@
    "fecIds": [
     "H4PA13199"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -1704,6 +1752,7 @@
    "fecIds": [
     "H2OK02315"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -1736,6 +1785,7 @@
    "fecIds": [
     "H4PA08124"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -1773,6 +1823,7 @@
    "fecIds": [
     "S2AL00145"
    ],
+   "lisId": "S416",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -1820,6 +1871,7 @@
    "fecIds": [
     "H2OH11169"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -1857,6 +1909,7 @@
    "fecIds": [
     "H2CA00120"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -1894,6 +1947,7 @@
    "fecIds": [
     "H6FL13148"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSTX",
@@ -1927,6 +1981,7 @@
     "H6NC13129",
     "S2NC00505"
    ],
+   "lisId": "S417",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -1974,6 +2029,7 @@
    "fecIds": [
     "H2IL13153"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -2006,6 +2062,7 @@
    "fecIds": [
     "H8TN02119"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -2043,6 +2100,7 @@
    "fecIds": [
     "H2MO07143"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -2075,6 +2133,7 @@
    "fecIds": [
     "H4OR05304"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -2102,6 +2161,7 @@
    "fecIds": [
     "H2CA37023"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -2129,6 +2189,7 @@
    "fecIds": [
     "H0FL03175"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -2162,6 +2223,7 @@
     "S8WA00194",
     "H2WA01054"
    ],
+   "lisId": "S275",
    "committees": [
     {
      "committeeId": "SSCM",
@@ -2215,6 +2277,7 @@
     "H0WV02138",
     "S4WV00159"
    ],
+   "lisId": "S372",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -2257,6 +2320,7 @@
    "fecIds": [
     "H6CA24303"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -2294,6 +2358,7 @@
    "fecIds": [
     "H2OH15228"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSLC",
@@ -2336,6 +2401,7 @@
    "fecIds": [
     "H8IN07184"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -2374,6 +2440,7 @@
     "H4GA01039",
     "S6GA00374"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -2406,6 +2473,7 @@
    "fecIds": [
     "H2TX31044"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -2433,6 +2501,7 @@
    "fecIds": [
     "H2LA02149"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -2465,6 +2534,7 @@
    "fecIds": [
     "H2TX35144"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -2497,6 +2567,7 @@
    "fecIds": [
     "H2HI02128"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -2525,6 +2596,7 @@
     "H8LA00017",
     "S4LA00107"
    ],
+   "lisId": "S373",
    "committees": [
     {
      "committeeId": "SSEG",
@@ -2567,6 +2639,7 @@
    "fecIds": [
     "H8IL06139"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -2600,6 +2673,7 @@
     "H6FL11126",
     "H6FL11134"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -2632,6 +2706,7 @@
    "fecIds": [
     "H2TX35011"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HLIG",
@@ -2664,6 +2739,7 @@
    "fecIds": [
     "H0CA32101"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -2696,6 +2772,7 @@
    "fecIds": [
     "H2AZ02360"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -2729,6 +2806,7 @@
     "H8CA39174",
     "H4CA31170"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -2761,6 +2839,7 @@
    "fecIds": [
     "H4MA05084"
    ],
+   "lisId": null,
    "committees": []
   },
   {
@@ -2782,6 +2861,7 @@
    "fecIds": [
     "H4NY11138"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -2809,6 +2889,7 @@
    "fecIds": [
     "H4MO05234"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -2836,6 +2917,7 @@
    "fecIds": [
     "H8VA06104"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -2878,6 +2960,7 @@
    "fecIds": [
     "H8TX27049"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -2910,6 +2993,7 @@
    "fecIds": [
     "H2SC02042"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -2937,6 +3021,7 @@
    "fecIds": [
     "H0GA09246"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -2969,6 +3054,7 @@
    "fecIds": [
     "H6TN09068"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -3001,6 +3087,7 @@
    "fecIds": [
     "H2OK04055"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -3029,6 +3116,7 @@
     "H4GA10071",
     "S6GA00390"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -3066,6 +3154,7 @@
    "fecIds": [
     "S6ME00159"
    ],
+   "lisId": "S252",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -3103,6 +3192,7 @@
    "fecIds": [
     "H6KY01110"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -3135,6 +3225,7 @@
    "fecIds": [
     "H4NJ03080"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -3167,6 +3258,7 @@
    "fecIds": [
     "S0DE00092"
    ],
+   "lisId": "S337",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -3214,6 +3306,7 @@
    "fecIds": [
     "S2TX00106"
    ],
+   "lisId": "S287",
    "committees": [
     {
      "committeeId": "SSFI",
@@ -3271,6 +3364,7 @@
    "fecIds": [
     "H6CA46116"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -3303,6 +3397,7 @@
    "fecIds": [
     "S6NV00200"
    ],
+   "lisId": "S385",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -3345,6 +3440,7 @@
    "fecIds": [
     "H4CA20082"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -3378,6 +3474,7 @@
     "H2AR04083",
     "S4AR00103"
    ],
+   "lisId": "S374",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -3420,6 +3517,7 @@
    "fecIds": [
     "H2CT02112"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -3453,6 +3551,7 @@
     "H6MN02131",
     "S6MN00499"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -3482,6 +3581,7 @@
     "H6ND00074",
     "S8ND00120"
    ],
+   "lisId": "S398",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -3524,6 +3624,7 @@
    "fecIds": [
     "H2AZ01354"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -3556,6 +3657,7 @@
    "fecIds": [
     "H6CO05142"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -3589,6 +3691,7 @@
     "S8ID00027",
     "H2ID02034"
    ],
+   "lisId": "S266",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -3631,6 +3734,7 @@
    "fecIds": [
     "H0AR01083"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -3668,6 +3772,7 @@
    "fecIds": [
     "H8TX02166"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -3701,6 +3806,7 @@
     "H2TX30178",
     "S6TX00552"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -3738,6 +3844,7 @@
    "fecIds": [
     "H8CO06229"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -3770,6 +3877,7 @@
    "fecIds": [
     "S2TX00312"
    ],
+   "lisId": "S355",
    "committees": [
     {
      "committeeId": "SSCM",
@@ -3812,6 +3920,7 @@
    "fecIds": [
     "H2TX23082"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -3840,6 +3949,7 @@
     "H8UT03238",
     "S4UT00282"
    ],
+   "lisId": "S431",
    "committees": [
     {
      "committeeId": "SSCM",
@@ -3883,6 +3993,7 @@
     "H2MT01060",
     "S2MT00096"
    ],
+   "lisId": "S375",
    "committees": [
     {
      "committeeId": "SSEG",
@@ -3925,6 +4036,7 @@
    "fecIds": [
     "H8KS03155"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -3957,6 +4069,7 @@
    "fecIds": [
     "H6OH08315"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -3989,6 +4102,7 @@
    "fecIds": [
     "H4IL07037"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -4016,6 +4130,7 @@
    "fecIds": [
     "H2NC02287"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -4048,6 +4163,7 @@
    "fecIds": [
     "H0TX15124"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -4080,6 +4196,7 @@
    "fecIds": [
     "H8PA04116"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -4112,6 +4229,7 @@
    "fecIds": [
     "H6CO01141"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -4139,6 +4257,7 @@
    "fecIds": [
     "H0CT03072"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -4166,6 +4285,7 @@
    "fecIds": [
     "H0WA08046"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -4193,6 +4313,7 @@
    "fecIds": [
     "H2PA17103"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -4225,6 +4346,7 @@
    "fecIds": [
     "H0CA10073"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -4262,6 +4384,7 @@
    "fecIds": [
     "H0TN04195"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -4294,6 +4417,7 @@
    "fecIds": [
     "H4OR03192"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -4326,6 +4450,7 @@
    "fecIds": [
     "H2FL25018"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -4353,6 +4478,7 @@
    "fecIds": [
     "H4MI12079"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -4385,6 +4511,7 @@
    "fecIds": [
     "H4TX10028"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSTX",
@@ -4422,6 +4549,7 @@
    "fecIds": [
     "H2FL14186"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -4454,6 +4582,7 @@
    "fecIds": [
     "H4MT02098"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -4487,6 +4616,7 @@
     "H6IL06141",
     "S6IL00292"
    ],
+   "lisId": "S386",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -4529,6 +4659,7 @@
    "fecIds": [
     "H6FL02208"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -4562,6 +4693,7 @@
     "S6IL00151",
     "H2IL20026"
    ],
+   "lisId": "S253",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -4599,6 +4731,7 @@
    "fecIds": [
     "H2NC14050"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -4631,6 +4764,7 @@
    "fecIds": [
     "H4MD03156"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -4663,6 +4797,7 @@
    "fecIds": [
     "H8TX06266"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -4695,6 +4830,7 @@
    "fecIds": [
     "H4MN06087"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -4722,6 +4858,7 @@
    "fecIds": [
     "S4IA00129"
    ],
+   "lisId": "S376",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -4764,6 +4901,7 @@
    "fecIds": [
     "H8TX16109"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -4796,6 +4934,7 @@
    "fecIds": [
     "H2NY13096"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -4823,6 +4962,7 @@
    "fecIds": [
     "H8KS04112"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -4860,6 +5000,7 @@
    "fecIds": [
     "H6PA02171"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -4887,6 +5028,7 @@
    "fecIds": [
     "H4CO08034"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -4919,6 +5061,7 @@
    "fecIds": [
     "H2MS04258"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -4951,6 +5094,7 @@
    "fecIds": [
     "H0TX04219"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -4988,6 +5132,7 @@
    "fecIds": [
     "H4ND00061"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -5015,6 +5160,7 @@
    "fecIds": [
     "H0IA04145"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -5047,6 +5193,7 @@
    "fecIds": [
     "S6PA00274"
    ],
+   "lisId": "S418",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -5089,6 +5236,7 @@
    "fecIds": [
     "H4LA06211"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -5116,6 +5264,7 @@
    "fecIds": [
     "H4AL02170"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5148,6 +5297,7 @@
    "fecIds": [
     "H6FL06258"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSFA",
@@ -5180,6 +5330,7 @@
    "fecIds": [
     "H2MN01223"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -5217,6 +5368,7 @@
    "fecIds": [
     "H0MN07091"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -5249,6 +5401,7 @@
    "fecIds": [
     "S2NE00094"
    ],
+   "lisId": "S357",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -5311,6 +5464,7 @@
    "fecIds": [
     "H0WI05113"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -5343,6 +5497,7 @@
    "fecIds": [
     "H6PA08277"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -5375,6 +5530,7 @@
    "fecIds": [
     "H0TN03254"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -5407,6 +5563,7 @@
    "fecIds": [
     "H8TX07140"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -5434,6 +5591,7 @@
    "fecIds": [
     "H2NE01118"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -5461,6 +5619,7 @@
    "fecIds": [
     "H4CA20181"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5499,6 +5658,7 @@
     "H8IL14067",
     "H2IL11124"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -5531,6 +5691,7 @@
    "fecIds": [
     "H2NC06114"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5563,6 +5724,7 @@
    "fecIds": [
     "H4NC05146"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -5601,6 +5763,7 @@
     "H2FL14053",
     "H2FL22080"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -5628,6 +5791,7 @@
    "fecIds": [
     "H0FL15104"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -5660,6 +5824,7 @@
    "fecIds": [
     "H4CA30149"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5692,6 +5857,7 @@
    "fecIds": [
     "H2FL10259"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5725,6 +5891,7 @@
     "H2SC07280",
     "S6SC04403"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -5757,6 +5924,7 @@
    "fecIds": [
     "H8ID01124"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -5789,6 +5957,7 @@
    "fecIds": [
     "H0GA14030"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5821,6 +5990,7 @@
    "fecIds": [
     "H6CA01285"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5859,6 +6029,7 @@
     "H4AZ07043",
     "S4AZ00139"
    ],
+   "lisId": "S432",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -5906,6 +6077,7 @@
    "fecIds": [
     "H0CA10149"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -5938,6 +6110,7 @@
    "fecIds": [
     "H0NY02234"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -5975,6 +6148,7 @@
    "fecIds": [
     "H2CA47188"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -6007,6 +6181,7 @@
    "fecIds": [
     "H8TX29052"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -6039,6 +6214,7 @@
    "fecIds": [
     "H8IL04134"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -6071,6 +6247,7 @@
    "fecIds": [
     "H4TX26149"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -6109,6 +6286,7 @@
     "H4NY04158",
     "H2NY04244"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -6142,6 +6320,7 @@
     "H6NY20167",
     "S0NY00410"
    ],
+   "lisId": "S331",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -6184,6 +6363,7 @@
    "fecIds": [
     "H0FL26036"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -6221,6 +6401,7 @@
    "fecIds": [
     "H2WA03217"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -6248,6 +6429,7 @@
    "fecIds": [
     "H8ME02185"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -6280,6 +6462,7 @@
    "fecIds": [
     "H4TX12065"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -6307,6 +6490,7 @@
    "fecIds": [
     "H2NY10308"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -6339,6 +6523,7 @@
    "fecIds": [
     "H8CA34266"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -6371,6 +6556,7 @@
    "fecIds": [
     "H6TX15162"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -6398,6 +6584,7 @@
    "fecIds": [
     "H8TX05144"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -6430,6 +6617,7 @@
    "fecIds": [
     "H4NH02399"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -6467,6 +6655,7 @@
    "fecIds": [
     "H0AZ01259"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -6499,6 +6688,7 @@
    "fecIds": [
     "H6NJ05171"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HLIG",
@@ -6529,6 +6719,7 @@
    "office": "211 Russell Senate Office Building Washington DC 20510",
    "birthday": "1964-06-12",
    "fecIds": [],
+   "lisId": "S441",
    "committees": []
   },
   {
@@ -6550,6 +6741,7 @@
    "fecIds": [
     "S0IA00028"
    ],
+   "lisId": "S153",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -6602,6 +6794,7 @@
    "fecIds": [
     "H0MO06073"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -6634,6 +6827,7 @@
    "fecIds": [
     "H2CA13115"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -6666,6 +6860,7 @@
    "fecIds": [
     "H4TX09095"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -6698,6 +6893,7 @@
    "fecIds": [
     "H0VA09055"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -6740,6 +6936,7 @@
    "fecIds": [
     "H6AZ07121"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -6772,6 +6969,7 @@
    "fecIds": [
     "H4WI06048"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -6814,6 +7012,7 @@
    "fecIds": [
     "H8MS03125"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -6851,6 +7050,7 @@
    "fecIds": [
     "H8KY02031"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -6879,6 +7079,7 @@
     "H2WY00166",
     "S6WY00209"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -6916,6 +7117,7 @@
    "fecIds": [
     "S0TN00169"
    ],
+   "lisId": "S407",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -6963,6 +7165,7 @@
    "fecIds": [
     "H4AZ08108"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -6995,6 +7198,7 @@
    "fecIds": [
     "H8CA10126"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -7022,6 +7226,7 @@
    "fecIds": [
     "H4FL08168"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -7054,6 +7259,7 @@
    "fecIds": [
     "H2NC13243"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -7086,6 +7292,7 @@
    "fecIds": [
     "H8MD01094"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -7114,6 +7321,7 @@
     "H6NC09200",
     "H4NC08066"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -7151,6 +7359,7 @@
    "fecIds": [
     "H0TN01118"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -7178,6 +7387,7 @@
    "fecIds": [
     "S6NH00091"
    ],
+   "lisId": "S388",
    "committees": [
     {
      "committeeId": "SSFI",
@@ -7225,6 +7435,7 @@
    "fecIds": [
     "S8MO00160"
    ],
+   "lisId": "S399",
    "committees": [
     {
      "committeeId": "SSHR",
@@ -7267,6 +7478,7 @@
    "fecIds": [
     "H8CT05245"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -7300,6 +7512,7 @@
     "H8NM01224",
     "S2NM00088"
    ],
+   "lisId": "S359",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -7343,6 +7556,7 @@
     "H8OK01157",
     "S6OK04247"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -7370,6 +7584,7 @@
    "fecIds": [
     "H4PR01010"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -7402,6 +7617,7 @@
    "fecIds": [
     "S0CO00575"
    ],
+   "lisId": "S408",
    "committees": [
     {
      "committeeId": "SSCM",
@@ -7444,6 +7660,7 @@
    "fecIds": [
     "H6LA03148"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -7481,6 +7698,7 @@
    "fecIds": [
     "H4AR02141"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HLIG",
@@ -7513,6 +7731,7 @@
    "fecIds": [
     "H8CT04172"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HLIG",
@@ -7545,6 +7764,7 @@
    "fecIds": [
     "H0IA01174"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -7583,6 +7803,7 @@
     "H6HI02251",
     "S2HI00106"
    ],
+   "lisId": "S361",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -7630,6 +7851,7 @@
    "fecIds": [
     "S0ND00093"
    ],
+   "lisId": "S344",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -7672,6 +7894,7 @@
    "fecIds": [
     "H2NV04011"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -7699,6 +7922,7 @@
    "fecIds": [
     "H6IN09143"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -7736,6 +7960,7 @@
    "fecIds": [
     "H8PA06087"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -7768,6 +7993,7 @@
    "fecIds": [
     "H2MD05155"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -7795,6 +8021,7 @@
    "fecIds": [
     "H2OR04095"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -7827,6 +8054,7 @@
    "fecIds": [
     "H2NC08185"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -7854,6 +8082,7 @@
    "fecIds": [
     "H2CA06259"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -7886,6 +8115,7 @@
    "fecIds": [
     "H0MI02094"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -7919,6 +8149,7 @@
     "H0TX07170",
     "S6TX00511"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -7951,6 +8182,7 @@
    "fecIds": [
     "H4CO03357"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -7988,6 +8220,7 @@
    "fecIds": [
     "S6OH00304"
    ],
+   "lisId": "S438",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -8035,6 +8268,7 @@
    "fecIds": [
     "S8MS00261"
    ],
+   "lisId": "S395",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -8083,6 +8317,7 @@
     "H0CA48024",
     "S8CA00135"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -8121,6 +8356,7 @@
     "H2MD04315",
     "H2MD04232"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -8153,6 +8389,7 @@
    "fecIds": [
     "H4GA03126"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -8190,6 +8427,7 @@
    "fecIds": [
     "H2IL01349"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -8222,6 +8460,7 @@
    "fecIds": [
     "H0TX13228"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -8264,6 +8503,7 @@
    "fecIds": [
     "H8CA49074"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -8297,6 +8537,7 @@
     "H2MI10150",
     "S8MI00372"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -8324,6 +8565,7 @@
    "fecIds": [
     "H6WA07458"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -8361,6 +8603,7 @@
    "fecIds": [
     "H2NY10092"
    ],
+   "lisId": null,
    "committees": []
   },
   {
@@ -8382,6 +8625,7 @@
    "fecIds": [
     "H8SD01055"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -8419,6 +8663,7 @@
    "fecIds": [
     "H6GA04129"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -8451,6 +8696,7 @@
    "fecIds": [
     "H4TX32089"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSLC",
@@ -8493,6 +8739,7 @@
    "fecIds": [
     "H6LA04138"
    ],
+   "lisId": null,
    "committees": []
   },
   {
@@ -8514,6 +8761,7 @@
    "fecIds": [
     "S0WI00197"
    ],
+   "lisId": "S345",
    "committees": [
     {
      "committeeId": "SSFI",
@@ -8556,6 +8804,7 @@
    "fecIds": [
     "H6OH04082"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -8588,6 +8837,7 @@
    "fecIds": [
     "H2OH14064"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -8620,6 +8870,7 @@
    "fecIds": [
     "H8PA13125"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -8647,6 +8898,7 @@
    "fecIds": [
     "S4WV00332"
    ],
+   "lisId": "S437",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -8689,6 +8941,7 @@
    "fecIds": [
     "S2VA00142"
    ],
+   "lisId": "S362",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -8731,6 +8984,7 @@
    "fecIds": [
     "H2CA37304"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -8763,6 +9017,7 @@
    "fecIds": [
     "H2OH09031"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -8795,6 +9050,7 @@
    "fecIds": [
     "H0NJ07261"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -8827,6 +9083,7 @@
    "fecIds": [
     "H0MA10082"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -8859,6 +9116,7 @@
    "fecIds": [
     "S0AZ00350"
    ],
+   "lisId": "S406",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -8906,6 +9164,7 @@
    "fecIds": [
     "H0PA03271"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -8934,6 +9193,7 @@
     "H2IL02172",
     "S6IL00474"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -8961,6 +9221,7 @@
    "fecIds": [
     "H6MS01131"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -8998,6 +9259,7 @@
    "fecIds": [
     "S4LA00065"
    ],
+   "lisId": "S389",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -9040,6 +9302,7 @@
    "fecIds": [
     "H4UT03260"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -9077,6 +9340,7 @@
    "fecIds": [
     "H4NY26078"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -9109,6 +9373,7 @@
    "fecIds": [
     "H4CA12055"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -9146,6 +9411,7 @@
    "fecIds": [
     "H2VA02064"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -9183,6 +9449,7 @@
    "fecIds": [
     "H2CA03157"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -9221,6 +9488,7 @@
     "H8NJ03206",
     "S4NJ00466"
    ],
+   "lisId": "S426",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -9268,6 +9536,7 @@
    "fecIds": [
     "H8CA39240"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -9305,6 +9574,7 @@
    "fecIds": [
     "S2ME00109"
    ],
+   "lisId": "S363",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -9347,6 +9617,7 @@
    "fecIds": [
     "H4MP01022"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -9384,6 +9655,7 @@
    "fecIds": [
     "S6MN00267"
    ],
+   "lisId": "S311",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -9436,6 +9708,7 @@
    "fecIds": [
     "H4NC13116"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -9479,6 +9752,7 @@
     "H6IL08147",
     "S6IL00482"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -9516,6 +9790,7 @@
    "fecIds": [
     "H2TN07103"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -9543,6 +9818,7 @@
    "fecIds": [
     "H6IL18088"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -9580,6 +9856,7 @@
    "fecIds": [
     "H2NY01190"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -9612,6 +9889,7 @@
    "fecIds": [
     "H2OH01194"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -9639,6 +9917,7 @@
    "fecIds": [
     "H2NY23228"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -9677,6 +9956,7 @@
     "H0OK05114",
     "S4OK00232"
    ],
+   "lisId": "S378",
    "committees": [
     {
      "committeeId": "SSFI",
@@ -9719,6 +9999,7 @@
    "fecIds": [
     "H0WA02080"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -9746,6 +10027,7 @@
    "fecIds": [
     "H8CT01046"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -9773,6 +10055,7 @@
    "fecIds": [
     "H4NY16087"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSFA",
@@ -9805,6 +10088,7 @@
    "fecIds": [
     "H8OH05036"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -9832,6 +10116,7 @@
    "fecIds": [
     "H2NY17162"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -9864,6 +10149,7 @@
    "fecIds": [
     "H2FL15241"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -9901,6 +10187,7 @@
    "fecIds": [
     "S0UT00165"
    ],
+   "lisId": "S346",
    "committees": [
     {
      "committeeId": "SSEG",
@@ -9943,6 +10230,7 @@
    "fecIds": [
     "H2PA18200"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -9975,6 +10263,7 @@
    "fecIds": [
     "H6NV04020"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -10007,6 +10296,7 @@
    "fecIds": [
     "H0NM03102"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -10040,6 +10330,7 @@
     "H2LA05126",
     "S6LA00664"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -10072,6 +10363,7 @@
    "fecIds": [
     "H8CA49058"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -10099,6 +10391,7 @@
    "fecIds": [
     "H4CA16197"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -10126,6 +10419,7 @@
    "fecIds": [
     "H4CA33119"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -10158,6 +10452,7 @@
    "fecIds": [
     "H4CA16049"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -10190,6 +10485,7 @@
    "fecIds": [
     "H4GA11061"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -10227,6 +10523,7 @@
    "fecIds": [
     "H4OK06056"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -10260,6 +10557,7 @@
     "H8NM03196",
     "S0NM00058"
    ],
+   "lisId": "S409",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -10313,6 +10611,7 @@
     "H8WY00148",
     "S0WY00137"
    ],
+   "lisId": "S410",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -10350,6 +10649,7 @@
    "fecIds": [
     "H0FL13158"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -10382,6 +10682,7 @@
    "fecIds": [
     "H2TX08182"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -10420,6 +10721,7 @@
     "H2MA09072",
     "S0MA00083"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -10452,6 +10754,7 @@
    "fecIds": [
     "H0SC01394"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -10489,6 +10792,7 @@
    "fecIds": [
     "H8PA15195"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -10526,6 +10830,7 @@
    "fecIds": [
     "H2RI02184"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -10558,6 +10863,7 @@
    "fecIds": [
     "H0NY11078"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -10590,6 +10896,7 @@
    "fecIds": [
     "H4UT02296"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -10622,6 +10929,7 @@
    "fecIds": [
     "H0KS01123"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -10654,6 +10962,7 @@
    "fecIds": [
     "H4NY22085"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -10687,6 +10996,7 @@
     "H6MA07101",
     "S4MA00028"
    ],
+   "lisId": "S369",
    "committees": [
     {
      "committeeId": "SSCM",
@@ -10730,6 +11040,7 @@
     "H6KS01179",
     "S0KS00315"
    ],
+   "lisId": "S411",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -10772,6 +11083,7 @@
    "fecIds": [
     "H2KY04121"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -10804,6 +11116,7 @@
    "fecIds": [
     "H6FL18097"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -10836,6 +11149,7 @@
    "fecIds": [
     "H6CA05195"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -10863,6 +11177,7 @@
    "fecIds": [
     "H8GA06393"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -10895,6 +11210,7 @@
    "fecIds": [
     "H4DE00045"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -10927,6 +11243,7 @@
    "fecIds": [
     "H4TX10093"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -10959,6 +11276,7 @@
    "fecIds": [
     "H0MI10287"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -10991,6 +11309,7 @@
    "fecIds": [
     "H4MD06340"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -11023,6 +11342,7 @@
    "fecIds": [
     "H4VA04066"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -11051,6 +11371,7 @@
     "H8CA04152",
     "H6CA21135"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -11088,6 +11409,7 @@
    "fecIds": [
     "H0MN04049"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -11115,6 +11437,7 @@
    "fecIds": [
     "S2KY00012"
    ],
+   "lisId": "S174",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -11162,6 +11485,7 @@
    "fecIds": [
     "S2PA00661"
    ],
+   "lisId": "S433",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -11209,6 +11533,7 @@
    "fecIds": [
     "H0GA07273"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -11246,6 +11571,7 @@
    "fecIds": [
     "H4MI08218"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -11278,6 +11604,7 @@
    "fecIds": [
     "H4NC06177"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -11315,6 +11642,7 @@
    "fecIds": [
     "H2KY03206"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSVR",
@@ -11352,6 +11680,7 @@
    "fecIds": [
     "H4MA03022"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -11385,6 +11714,7 @@
     "H2VA07196",
     "H0VA07133"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -11417,6 +11747,7 @@
    "fecIds": [
     "H4NJ10176"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -11449,6 +11780,7 @@
    "fecIds": [
     "H8NY06048"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -11481,6 +11813,7 @@
    "fecIds": [
     "H6NJ11286"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -11513,6 +11846,7 @@
    "fecIds": [
     "H6TX18232"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -11545,6 +11879,7 @@
    "fecIds": [
     "H2NJ08232"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -11572,6 +11907,7 @@
    "fecIds": [
     "H2NY06116"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -11599,6 +11935,7 @@
    "fecIds": [
     "S8OR00207"
    ],
+   "lisId": "S322",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -11651,6 +11988,7 @@
    "fecIds": [
     "H4IN08249"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -11688,6 +12026,7 @@
    "fecIds": [
     "H8PA10147"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -11722,6 +12061,7 @@
     "H6MD07020",
     "H0MD07114"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -11754,6 +12094,7 @@
    "fecIds": [
     "H8WV03097"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -11781,6 +12122,7 @@
    "fecIds": [
     "H0IL15129"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSPR",
@@ -11823,6 +12165,7 @@
    "fecIds": [
     "H2OH16051"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -11855,6 +12198,7 @@
    "fecIds": [
     "H8IA02043"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -11887,6 +12231,7 @@
    "fecIds": [
     "H2FL07156"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -11919,6 +12264,7 @@
    "fecIds": [
     "H4CA47085"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -11956,6 +12302,7 @@
    "fecIds": [
     "S6FL00640"
    ],
+   "lisId": "S439",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -12008,6 +12355,7 @@
    "fecIds": [
     "H4MI04126"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -12041,6 +12389,7 @@
     "H8AL02171",
     "S6AL00476"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -12073,6 +12422,7 @@
    "fecIds": [
     "H0UT01205"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -12105,6 +12455,7 @@
    "fecIds": [
     "H4WI04183"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -12137,6 +12488,7 @@
    "fecIds": [
     "H4WV02205"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -12164,6 +12516,7 @@
    "fecIds": [
     "H4NC14015"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -12197,6 +12550,7 @@
     "H6KS01096",
     "S0KS00091"
    ],
+   "lisId": "S347",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -12249,6 +12603,7 @@
    "fecIds": [
     "H2TX01112"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -12286,6 +12641,7 @@
    "fecIds": [
     "H8NY25105"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSPR",
@@ -12328,6 +12684,7 @@
    "fecIds": [
     "S4OH00192"
    ],
+   "lisId": "S434",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -12375,6 +12732,7 @@
    "fecIds": [
     "H4MN03118"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSVR",
@@ -12407,6 +12765,7 @@
    "fecIds": [
     "H2FL22171"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -12445,6 +12804,7 @@
     "H4MA06090",
     "S6MA00296"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -12482,6 +12842,7 @@
    "fecIds": [
     "H2GU01031"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -12519,6 +12880,7 @@
    "fecIds": [
     "H0IN01150"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -12546,6 +12908,7 @@
    "fecIds": [
     "H2CA14162"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -12573,6 +12936,7 @@
    "fecIds": [
     "S4AK00099"
    ],
+   "lisId": "S288",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -12616,6 +12980,7 @@
     "H6CT05124",
     "S2CT00132"
    ],
+   "lisId": "S364",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -12653,6 +13018,7 @@
    "fecIds": [
     "H0NC03172"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSPR",
@@ -12695,6 +13061,7 @@
    "fecIds": [
     "S2WA00189"
    ],
+   "lisId": "S229",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -12737,6 +13104,7 @@
    "fecIds": [
     "H2NY17071"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -12769,6 +13137,7 @@
    "fecIds": [
     "H8MA02041"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSTX",
@@ -12801,6 +13170,7 @@
    "fecIds": [
     "H8CO02160"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -12838,6 +13208,7 @@
    "fecIds": [
     "H0TX22302"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -12875,6 +13246,7 @@
    "fecIds": [
     "H4WA04104"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -12912,6 +13284,7 @@
    "fecIds": [
     "H4NJ01084"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -12945,6 +13318,7 @@
     "H8SC05158",
     "S6SC04445"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -12982,6 +13356,7 @@
    "fecIds": [
     "H0DC00058"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -13014,6 +13389,7 @@
    "fecIds": [
     "H2IA03119"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -13051,6 +13427,7 @@
    "fecIds": [
     "H0CA08135"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -13088,6 +13465,7 @@
    "fecIds": [
     "H8NY15148"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -13115,6 +13493,7 @@
    "fecIds": [
     "H2TN05446"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -13147,6 +13526,7 @@
    "fecIds": [
     "H4MD02232"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSFA",
@@ -13179,6 +13559,7 @@
    "fecIds": [
     "H8MN05239"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSED",
@@ -13212,6 +13593,7 @@
     "H8MO09146",
     "H4MO03221"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -13250,6 +13632,7 @@
     "H8GA06195",
     "S8GA00180"
    ],
+   "lisId": "S414",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -13287,6 +13670,7 @@
    "fecIds": [
     "H0UT04076"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -13319,6 +13703,7 @@
    "fecIds": [
     "S2CA00955"
    ],
+   "lisId": "S413",
    "committees": [
     {
      "committeeId": "SSEG",
@@ -13377,6 +13762,7 @@
     "H8NJ03073",
     "S6NJ00263"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -13404,6 +13790,7 @@
    "fecIds": [
     "H4AL06098"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -13436,6 +13823,7 @@
    "fecIds": [
     "H6CA20152"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -13469,6 +13857,7 @@
     "H8NH01210",
     "S6NH00141"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -13501,6 +13890,7 @@
    "fecIds": [
     "H6FL01390"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -13533,6 +13923,7 @@
    "fecIds": [
     "S0KY00156"
    ],
+   "lisId": "S348",
    "committees": [
     {
      "committeeId": "SSFR",
@@ -13575,6 +13966,7 @@
    "fecIds": [
     "H8CA05035"
    ],
+   "lisId": null,
    "committees": []
   },
   {
@@ -13596,6 +13988,7 @@
    "fecIds": [
     "H2PA04135"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -13639,6 +14032,7 @@
     "H8MI09068",
     "S4MI00355"
    ],
+   "lisId": "S380",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -13681,6 +14075,7 @@
    "fecIds": [
     "H2CA52089"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -13713,6 +14108,7 @@
    "fecIds": [
     "H8CO07045"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -13740,6 +14136,7 @@
    "fecIds": [
     "H0TX11230"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -13773,6 +14170,7 @@
     "H8ME01120",
     "S0ME00038"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -13805,6 +14203,7 @@
    "fecIds": [
     "H2VI00082"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -13842,6 +14241,7 @@
    "fecIds": [
     "H2WI02124"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -13874,6 +14274,7 @@
    "fecIds": [
     "H4NJ09194"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -13906,6 +14307,7 @@
    "fecIds": [
     "H8MA07032"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -13938,6 +14340,7 @@
    "fecIds": [
     "H0IL05096"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -13970,6 +14373,7 @@
    "fecIds": [
     "H4AS00036"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -14007,6 +14411,7 @@
    "fecIds": [
     "H2IL03162"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -14039,6 +14444,7 @@
    "fecIds": [
     "H4WA06117"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -14071,6 +14477,7 @@
    "fecIds": [
     "H6MD08457"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -14099,6 +14506,7 @@
     "S6RI00163",
     "H0RI02071"
    ],
+   "lisId": "S259",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -14141,6 +14549,7 @@
    "fecIds": [
     "H8PA18199"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -14168,6 +14577,7 @@
    "fecIds": [
     "S6NE00129"
    ],
+   "lisId": "S423",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -14210,6 +14620,7 @@
    "fecIds": [
     "H8NY22177"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -14242,6 +14653,7 @@
    "fecIds": [
     "S8ID00092"
    ],
+   "lisId": "S323",
    "committees": [
     {
      "committeeId": "SSEG",
@@ -14294,6 +14706,7 @@
    "fecIds": [
     "H4CA29141"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -14326,6 +14739,7 @@
    "fecIds": [
     "H0KY05015"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -14353,6 +14767,7 @@
    "fecIds": [
     "H2AL03032"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -14380,6 +14795,7 @@
    "fecIds": [
     "H8TN06094"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -14413,6 +14829,7 @@
     "H6NV03139",
     "S8NV00156"
    ],
+   "lisId": "S402",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -14455,6 +14872,7 @@
    "fecIds": [
     "H0NC02125"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -14492,6 +14910,7 @@
    "fecIds": [
     "S4SD00049"
    ],
+   "lisId": "S381",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -14544,6 +14963,7 @@
    "fecIds": [
     "H2NC07096"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -14581,6 +15001,7 @@
    "fecIds": [
     "H8TX21307"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -14618,6 +15039,7 @@
    "fecIds": [
     "H2CA36439"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -14645,6 +15067,7 @@
    "fecIds": [
     "H4OH06165"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -14677,6 +15100,7 @@
    "fecIds": [
     "H6FL04105"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -14704,6 +15128,7 @@
    "fecIds": [
     "H8NY19223"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -14736,6 +15161,7 @@
    "fecIds": [
     "H8FL27185"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -14768,6 +15194,7 @@
    "fecIds": [
     "H2OR06066"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -14800,6 +15227,7 @@
    "fecIds": [
     "H2CA39078"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -14828,6 +15256,7 @@
     "H8VT01016",
     "S4VT00033"
    ],
+   "lisId": "S313",
    "committees": [
     {
      "committeeId": "SSEV",
@@ -14875,6 +15304,7 @@
    "fecIds": [
     "H0LA01087"
    ],
+   "lisId": null,
    "committees": []
   },
   {
@@ -14896,6 +15326,7 @@
    "fecIds": [
     "H8PA07200"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -14928,6 +15359,7 @@
    "fecIds": [
     "H8IL09067"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -14956,6 +15388,7 @@
     "S4HI00136",
     "H6HI02244"
    ],
+   "lisId": "S353",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -15004,6 +15437,7 @@
     "H0CA27085",
     "S4CA00555"
    ],
+   "lisId": "S427",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -15046,6 +15480,7 @@
    "fecIds": [
     "H4KS02164"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSJU",
@@ -15083,6 +15518,7 @@
    "fecIds": [
     "S2MO00544"
    ],
+   "lisId": "S420",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -15125,6 +15561,7 @@
    "fecIds": [
     "H2IL10068"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -15157,6 +15594,7 @@
    "fecIds": [
     "H0MI03316"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -15189,6 +15627,7 @@
    "fecIds": [
     "H8WA08189"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -15217,6 +15656,7 @@
     "S8NY00082",
     "H0NY16010"
    ],
+   "lisId": "S270",
    "committees": [
     {
      "committeeId": "SSRA",
@@ -15250,6 +15690,7 @@
     "H4AZ06045",
     "H8AZ05097"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -15282,6 +15723,7 @@
    "fecIds": [
     "H0GA08099"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -15324,6 +15766,7 @@
    "fecIds": [
     "S8FL00273"
    ],
+   "lisId": "S404",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -15371,6 +15814,7 @@
    "fecIds": [
     "H6VA01117"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSED",
@@ -15404,6 +15848,7 @@
     "H0SC01279",
     "S4SC00240"
    ],
+   "lisId": "S365",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -15447,6 +15892,7 @@
     "H2TX03290",
     "H2TX00064"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -15484,6 +15930,7 @@
    "fecIds": [
     "H2TX03126"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -15516,6 +15963,7 @@
    "fecIds": [
     "H0AL07086"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSPR",
@@ -15553,6 +16001,7 @@
    "fecIds": [
     "S0NH00219"
    ],
+   "lisId": "S324",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -15605,6 +16054,7 @@
    "fecIds": [
     "S4MT00183"
    ],
+   "lisId": "S435",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -15642,6 +16092,7 @@
    "fecIds": [
     "H6CA24113"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -15674,6 +16125,7 @@
    "fecIds": [
     "H4IN06185"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -15701,6 +16153,7 @@
    "fecIds": [
     "H4CA12154"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -15733,6 +16186,7 @@
    "fecIds": [
     "H8ID02064"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -15761,6 +16215,7 @@
     "H8MI08102",
     "S4MI00470"
    ],
+   "lisId": "S436",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -15803,6 +16258,7 @@
    "fecIds": [
     "H6WA09025"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -15830,6 +16286,7 @@
    "fecIds": [
     "H6NE03115"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSTX",
@@ -15862,6 +16319,7 @@
    "fecIds": [
     "H8NJ04014"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSFA",
@@ -15889,6 +16347,7 @@
    "fecIds": [
     "H4MO08162"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSTX",
@@ -15921,6 +16380,7 @@
    "fecIds": [
     "S8MN00578"
    ],
+   "lisId": "S394",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -15963,6 +16423,7 @@
    "fecIds": [
     "H6PA16320"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -16000,6 +16461,7 @@
    "fecIds": [
     "H2IL17147"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -16032,6 +16494,7 @@
    "fecIds": [
     "H6FL09179"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -16064,6 +16527,7 @@
    "fecIds": [
     "H0IN05326"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSEC",
@@ -16091,6 +16555,7 @@
    "fecIds": [
     "H2NM01144"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -16123,6 +16588,7 @@
    "fecIds": [
     "H8AZ09040"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -16160,6 +16626,7 @@
    "fecIds": [
     "H8MN08043"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -16197,6 +16664,7 @@
    "fecIds": [
     "H4NY21079"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -16234,6 +16702,7 @@
    "fecIds": [
     "H8WI01156"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSPR",
@@ -16276,6 +16745,7 @@
    "fecIds": [
     "H8FL17053"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -16309,6 +16779,7 @@
     "H8MI11254",
     "S6MI00426"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -16346,6 +16817,7 @@
    "fecIds": [
     "H0WA10034"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -16378,6 +16850,7 @@
    "fecIds": [
     "H2AL05102"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -16411,6 +16884,7 @@
     "H0IN03198",
     "S0IN00095"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -16443,6 +16917,7 @@
    "fecIds": [
     "H4VA10279"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -16480,6 +16955,7 @@
    "fecIds": [
     "S4AK00214"
    ],
+   "lisId": "S383",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -16522,6 +16998,7 @@
    "fecIds": [
     "H6NY03247"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -16554,6 +17031,7 @@
    "fecIds": [
     "H2OH13264"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -16586,6 +17064,7 @@
    "fecIds": [
     "H2CA43245"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSVR",
@@ -16618,6 +17097,7 @@
    "fecIds": [
     "H4OH02248"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -16650,6 +17130,7 @@
    "fecIds": [
     "H4NY22051"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -16687,6 +17168,7 @@
    "fecIds": [
     "H2MI13204"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -16719,6 +17201,7 @@
    "fecIds": [
     "H4MS02068"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -16746,6 +17229,7 @@
    "fecIds": [
     "H8PA05071"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -16778,6 +17262,7 @@
    "fecIds": [
     "H8CA01109"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -16806,6 +17291,7 @@
     "S2SD00068",
     "H6SD00085"
    ],
+   "lisId": "S303",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -16848,6 +17334,7 @@
    "fecIds": [
     "H0WI07101"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -16880,6 +17367,7 @@
    "fecIds": [
     "S4NC00162"
    ],
+   "lisId": "S384",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -16927,6 +17415,7 @@
    "fecIds": [
     "H8SC04250"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -16959,6 +17448,7 @@
    "fecIds": [
     "H8NV03036"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -16991,6 +17481,7 @@
    "fecIds": [
     "H8MI13250"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSGO",
@@ -17023,6 +17514,7 @@
    "fecIds": [
     "H2HI02581"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -17060,6 +17552,7 @@
    "fecIds": [
     "H8NY21203"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -17092,6 +17585,7 @@
    "fecIds": [
     "H4CA35031"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -17124,6 +17618,7 @@
    "fecIds": [
     "H0NY15160"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -17156,6 +17651,7 @@
    "fecIds": [
     "H8MA03106"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -17183,6 +17679,7 @@
    "fecIds": [
     "H4CA45170"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -17215,6 +17712,7 @@
    "fecIds": [
     "S0AL00230"
    ],
+   "lisId": "S412",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -17263,6 +17761,7 @@
     "H2OH03067",
     "H2OH03091"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -17295,6 +17794,7 @@
    "fecIds": [
     "H8IL14174"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -17322,6 +17822,7 @@
    "fecIds": [
     "H2CA20094"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "JSLC",
@@ -17359,6 +17860,7 @@
    "fecIds": [
     "H8NJ02166"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -17391,6 +17893,7 @@
    "fecIds": [
     "H0TX24209"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -17423,6 +17926,7 @@
    "fecIds": [
     "H6TN07161"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -17456,6 +17960,7 @@
     "H2MD08126",
     "S6MD03441"
    ],
+   "lisId": "S390",
    "committees": [
     {
      "committeeId": "SSAP",
@@ -17498,6 +18003,7 @@
    "fecIds": [
     "H0WI03175"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -17535,6 +18041,7 @@
    "fecIds": [
     "H2CA50026"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -17562,6 +18069,7 @@
    "fecIds": [
     "H2NM02191"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -17594,6 +18102,7 @@
    "fecIds": [
     "H2TX33073"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSIF",
@@ -17621,6 +18130,7 @@
    "fecIds": [
     "H2NY00010"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -17653,6 +18163,7 @@
    "fecIds": [
     "H4VA07234"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAG",
@@ -17685,6 +18196,7 @@
    "fecIds": [
     "H2MO02102"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HLIG",
@@ -17717,6 +18229,7 @@
    "fecIds": [
     "H0CA15213"
    ],
+   "lisId": null,
    "committees": []
   },
   {
@@ -17738,6 +18251,7 @@
    "fecIds": [
     "H4MI07103"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -17770,6 +18284,7 @@
    "fecIds": [
     "H6VA11066"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSHM",
@@ -17803,6 +18318,7 @@
     "S6VA00093",
     "P80003023"
    ],
+   "lisId": "S327",
    "committees": [
     {
      "committeeId": "SSBK",
@@ -17850,6 +18366,7 @@
    "fecIds": [
     "S0GA00559"
    ],
+   "lisId": "S415",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -17892,6 +18409,7 @@
    "fecIds": [
     "S2MA00170"
    ],
+   "lisId": "S366",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -17934,6 +18452,7 @@
    "fecIds": [
     "H4FL20023"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -17966,6 +18485,7 @@
    "fecIds": [
     "H4CA23011"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -17993,6 +18513,7 @@
    "fecIds": [
     "H4NJ12149"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -18025,6 +18546,7 @@
    "fecIds": [
     "H2TX14149"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -18058,6 +18580,7 @@
     "H0FL08208",
     "S4FL00256"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -18097,6 +18620,7 @@
     "H8VT00034",
     "S2VT00235"
    ],
+   "lisId": "S422",
    "committees": [
     {
      "committeeId": "SSAF",
@@ -18139,6 +18663,7 @@
    "fecIds": [
     "H4AR04048"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -18171,6 +18696,7 @@
    "fecIds": [
     "S6RI00221"
    ],
+   "lisId": "S316",
    "committees": [
     {
      "committeeId": "SSEV",
@@ -18223,6 +18749,7 @@
    "fecIds": [
     "H4CA27111"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSSY",
@@ -18256,6 +18783,7 @@
     "H4MS01078",
     "S8MS00196"
    ],
+   "lisId": "S318",
    "committees": [
     {
      "committeeId": "SSAS",
@@ -18308,6 +18836,7 @@
    "fecIds": [
     "H4WI08119"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -18345,6 +18874,7 @@
    "fecIds": [
     "H0GA05301"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -18373,6 +18903,7 @@
     "H2TX33040",
     "S2TX00270"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSBA",
@@ -18405,6 +18936,7 @@
    "fecIds": [
     "H0FL17068"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSPW",
@@ -18437,6 +18969,7 @@
    "fecIds": [
     "H2SC02059"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAS",
@@ -18474,6 +19007,7 @@
    "fecIds": [
     "H8VA01147"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSII",
@@ -18511,6 +19045,7 @@
    "fecIds": [
     "H0AR03055"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",
@@ -18539,6 +19074,7 @@
     "S6OR00110",
     "H0OR03026"
    ],
+   "lisId": "S247",
    "committees": [
     {
      "committeeId": "SSEG",
@@ -18586,6 +19122,7 @@
    "fecIds": [
     "H2IN02295"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSWM",
@@ -18614,6 +19151,7 @@
     "H0IN09070",
     "S6IN00191"
    ],
+   "lisId": "S391",
    "committees": [
     {
      "committeeId": "SSCM",
@@ -18656,6 +19194,7 @@
    "fecIds": [
     "H4MT01041"
    ],
+   "lisId": null,
    "committees": [
     {
      "committeeId": "HSAP",

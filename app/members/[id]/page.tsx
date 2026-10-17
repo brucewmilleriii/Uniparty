@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Provenance from "@/components/Provenance";
-import { getMember, getRoster } from "@/lib/data";
+import RecentVotes from "@/components/RecentVotes";
+import { getMember, getMemberVotes, getRoster } from "@/lib/data";
 import { PARTY, STATES, ageOn, roleTitle, sourceLinks } from "@/lib/format";
 
 export const revalidate = 3600;
@@ -23,6 +24,7 @@ export default async function MemberPage({ params }: Props) {
   const { id } = await params;
   const { member: m, roster } = await getMember(id);
   if (!m) notFound();
+  const votes = await getMemberVotes(m);
 
   const L = sourceLinks(m);
   const now = new Date();
@@ -80,6 +82,8 @@ export default async function MemberPage({ params }: Props) {
         </div>
       </div>
 
+      <RecentVotes votes={votes} lastName={m.lastName} />
+
       <div className="card">
         <div className="panel">
           <div className="h3">Committees</div>
@@ -96,7 +100,7 @@ export default async function MemberPage({ params }: Props) {
             <p className="panel-note">No committee assignments on file.</p>
           )}
           <div className="src">
-            <Provenance roster={roster} />
+            <Provenance data={roster} />
           </div>
         </div>
       </div>
@@ -105,7 +109,7 @@ export default async function MemberPage({ params }: Props) {
         <div className="empty">
           <h2>More records for {m.lastName}</h2>
           <p>
-            Votes, bills, campaign money and stock trades are being connected next. Until then, these go straight to the official
+            Bills, campaign money and stock trades are being connected next. Until then, these go straight to the official
             record for {STATES[m.state] ?? m.state}’s {m.chamber === "senate" ? "senator" : "representative"}:
           </p>
           <div className="srclinks">
@@ -122,7 +126,7 @@ export default async function MemberPage({ params }: Props) {
               <span>{m.chamber === "house" ? "House Clerk disclosures" : "Senate eFD search"}</span>
             </a>
             <a href={L.votes} target="_blank" rel="noopener">
-              <b>Roll-call votes ↗</b>
+              <b>Full voting record ↗</b>
               <span>{m.chamber === "house" ? "Office of the Clerk" : "Senate.gov"}</span>
             </a>
           </div>

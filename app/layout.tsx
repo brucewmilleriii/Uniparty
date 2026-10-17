@@ -73,8 +73,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <p>
               <b>Where the data comes from.</b> The roster and committee seats come from the public-domain{" "}
               <a href="https://github.com/unitedstates/congress-legislators" target="_blank" rel="noopener">congress-legislators</a>{" "}
-              dataset, refreshed daily and checked before publishing. Votes, bills, campaign money and stock trades will come from the
-              House Clerk, Senate.gov, Congress.gov, the FEC and STOCK Act filings.
+              dataset. Roll-call votes come straight from the House Clerk and Senate.gov. Both are refreshed daily and checked before
+              publishing. Bills, campaign money and stock trades will come from Congress.gov, the FEC and STOCK Act filings.
             </p>
           </div>
         </footer>

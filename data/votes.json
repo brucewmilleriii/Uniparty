@@ -1,0 +1,15 @@
+{
+ "provenance": {
+  "fetchedAt": null,
+  "window": 50,
+  "house": {
+   "source": "Office of the Clerk, U.S. House",
+   "sourceHome": "https://clerk.house.gov/Votes"
+  },
+  "senate": {
+   "source": "U.S. Senate",
+   "sourceHome": "https://www.senate.gov/legislative/votes_new.htm"
+  }
+ },
+ "votes": []
+}
