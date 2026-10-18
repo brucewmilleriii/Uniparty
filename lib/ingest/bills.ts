@@ -144,8 +144,9 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
     });
   }
 
-  // Newest first by date; ties keep the source order.
-  links.sort((a, b) => b.date.localeCompare(a.date));
+  // Newest first by date. The source order isn't stable, so break ties by bill
+  // (higher number first, then type) to keep the same window from run to run.
+  links.sort((a, b) => b.date.localeCompare(a.date) || b.bill.number - a.bill.number || a.bill.type.localeCompare(b.bill.type));
 
   const last = pages[pages.length - 1];
   if (!pages.length) errors.push(`${at}: no pages fetched`);

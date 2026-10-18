@@ -79,6 +79,8 @@ describe("parseLegislation", () => {
     const s3466 = co.links.find((l) => l.bill.id === "119-s-3466")!;
     expect(s3466.date).toBe("2026-09-29");
     expect(s3466.bill.latestAction?.date).toBe("2025-12-11");
+    // Seven bills share 2026-09-30; ties are ordered by number, so the window is stable.
+    expect(co.links.slice(0, 7).map((l) => l.bill.label)).toEqual(["S. 5665", "S. 5656", "S. 5614", "S.Res. 946", "S.Res. 945", "S.Res. 931", "S.J.Res. 220"]);
   });
 
   it("accepts a list that isn't in date order, and sorts it newest first", () => {
