@@ -28,6 +28,7 @@ import {
   checkCosponsor,
   checkSponsor,
   cosponsorsNext,
+  itemKey,
   memberLegislationUrl,
   needsNextPage,
   parseLegislation,
@@ -198,7 +199,7 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
     }
     all.push(...pages);
     kept.push(...read);
-    const distinct = new Set(all.flatMap((p) => p.items.map((i) => String(i.url ?? "").split("?")[0]))).size;
+    const distinct = new Set(all.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
     if (all.every((p) => p.count === all[0].count) && distinct >= all[0].count) break;
   }
   sources.push(...kept);

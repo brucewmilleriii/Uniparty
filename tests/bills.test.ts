@@ -147,6 +147,9 @@ describe("parseLegislation", () => {
     // A malformed item from an earlier Congress isn't kept, so it isn't an error.
     const broken = { ...old, url: undefined, introducedDate: null };
     expect(parseLegislation(page([a, broken]), "sponsored", "K000367", 119, today).errors).toEqual([]);
+    // Without a URL it's still keyed by bill, so a repeat across reads counts once and the gap shows.
+    expect(parseLegislation([{ items: [a, broken, broken], count: 3, next: null }], "sponsored", "K000367", 119, today).errors.join()).toMatch(/read 2 distinct items but Congress.gov reports 3/);
+    expect(parseLegislation(page([a, { congress: 118 }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/no URL or bill number/);
     expect(parseLegislation(page([b, a]), "sponsored", "K000367", 119, today).errors).toEqual([]);
     expect(parseLegislation(page([{ ...a, introducedDate: "2027-01-01" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/future/);
     expect(parseLegislation(page([{ ...a, type: "XYZ" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/not a recognisable bill/);

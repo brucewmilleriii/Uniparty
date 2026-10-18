@@ -69,6 +69,17 @@ export interface ParsedLegislation {
 }
 
 /**
+ * What identifies a list item across reads: its API URL, or for one without a URL
+ * (seen on old records) its Congress, type and number. Empty if it has neither.
+ */
+export function itemKey(item: Record<string, unknown>): string {
+  const url = str(item.url).split("?")[0];
+  if (url) return url;
+  const n = str(item.number) || str(item.amendmentNumber);
+  return n ? `${str(item.congress)}/${str(item.type).toLowerCase() || "amendment"}/${n}` : "";
+}
+
+/**
  * Read a member's pages for the current Congress and check them: every item must be
  * a well-formed bill in a Congress no later than the current one, and the whole list
  * must be there: the distinct items must number exactly the count Congress.gov reports,
@@ -89,9 +100,13 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   for (const item of pages.flatMap((p) => p.items)) {
     // Every item, whatever its Congress, is counted once, so the completeness check below
     // sees through repeats to any item they pushed out of the read.
-    const key = str(item.url).split("?")[0];
-    if (key && seen.has(key)) continue;
-    if (key) seen.add(key);
+    const key = itemKey(item);
+    if (!key) {
+      errors.push(`${at}: an item has no URL or bill number, so repeats of it can't be told apart`);
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key);
     listed++;
     const c = Number(item.congress);
     const date = str(item.introducedDate);
