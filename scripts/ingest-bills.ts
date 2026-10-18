@@ -63,7 +63,7 @@ const CONCURRENCY = 4;
  * Calls per hour this job allows itself. api.data.gov allows 5,000 an hour per key,
  * and the same key serves the FEC ingest, so this leaves room for it.
  */
-const HOURLY_BUDGET = 3600;
+const HOURLY_BUDGET = 4200;
 /** Wait for the key's hourly allowance to recover when fewer calls than this are left. */
 const RESERVE = 400;
 
@@ -159,8 +159,22 @@ const errors: string[] = [];
 const missing: string[] = [];
 
 /** Read one whole list, once more if its count changed mid-read (an item added or removed shifts the offsets). */
+/** Most full reads of one list before giving up on collecting every item. */
+const MAX_READS = 6;
+let reReads = 0;
+
+/**
+ * Read one member list, all pages. Congress.gov's order shifts between requests, so a
+ * single pass by offset repeats some items and misses others; the list is read again
+ * until the distinct items reach the reported count, and every pass is returned for
+ * parseLegislation to merge and check. A pass whose count differs from the earlier
+ * ones (the list really changed) replaces them.
+ */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
-  for (let attempt = 1; ; attempt++) {
+  let all: LegislationPage[] = [];
+  let kept: MemberBills["sources"] = [];
+  for (let attempt = 1; attempt <= MAX_READS; attempt++) {
+    if (attempt > 1) reReads++;
     const pages: LegislationPage[] = [];
     const read: MemberBills["sources"] = [];
     for (let offset = 0; ; ) {
@@ -168,7 +182,7 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
       const res = await get(url);
       if (!res) {
         // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
-        if (pages.length === 0) return null;
+        if (pages.length === 0 && attempt === 1) return null;
         throw new Error(`${id} ${kind}: ${publicUrl(url)} returned 404 partway through the list`);
       }
       const page = readLegislationPage(res.body, kind);
@@ -178,11 +192,17 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
       offset += page.items.length;
       if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${id} ${kind}: more pages than the reported count allows; refusing to keep paging`);
     }
-    if (pages.every((p) => p.count === pages[0].count) || attempt >= 2) {
-      sources.push(...read);
-      return pages;
+    if (all.length && (all[0].count !== pages[0].count || !pages.every((p) => p.count === pages[0].count))) {
+      all = [];
+      kept = [];
     }
+    all.push(...pages);
+    kept.push(...read);
+    const distinct = new Set(all.flatMap((p) => p.items.map((i) => String(i.url ?? "").split("?")[0]))).size;
+    if (all.every((p) => p.count === all[0].count) && distinct >= all[0].count) break;
   }
+  sources.push(...kept);
+  return all;
 }
 
 async function main() {
@@ -271,7 +291,7 @@ async function main() {
   }
 
   const total = (k: "sponsoredCount" | "cosponsoredCount") => Object.values(members).reduce((n, m) => n + m[k], 0);
-  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made`;
+  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made, ${reReads} lists read again to fill gaps`;
   if (check) {
     console.log(`Check passed: ${summary}. Nothing written.`);
     return;

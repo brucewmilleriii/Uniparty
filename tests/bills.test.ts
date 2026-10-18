@@ -111,7 +111,7 @@ describe("parseLegislation", () => {
 
   it("rejects a list that ends short of the count Congress.gov reports", () => {
     const p = parseLegislation([{ ...klobSponsored, next: null }], "sponsored", "K000367", 119, today);
-    expect(p.errors.join()).toMatch(/ended after 8 items but Congress.gov reports 1433/);
+    expect(p.errors.join()).toMatch(/read 8 distinct items but Congress.gov reports 1433/);
   });
 
   it("rejects a list that stopped paging too early", () => {
@@ -122,14 +122,22 @@ describe("parseLegislation", () => {
   it("rejects repeats, future dates and unrecognisable bills", () => {
     const [a, b] = klobSponsored.items;
     const page = (items: Record<string, unknown>[]) => [{ items, count: items.length, next: null }];
-    expect(parseLegislation(page([a, a]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/listed twice/);
-    // A repeat of an earlier-Congress item across a page boundary means the list shifted and an item may be missing.
+    // A repeat counts once, so the item it pushed out of the read shows up as missing.
+    expect(parseLegislation([{ items: [a, a], count: 2, next: null }], "sponsored", "K000367", 119, today).errors.join()).toMatch(/read 1 distinct items but Congress.gov reports 2/);
+    // That holds for an earlier-Congress item repeated across a page boundary too.
     const old = pelosiSponsored.items[0];
     const pages = [
       { items: [a, old], count: 3, next: "page 2" },
       { items: [old], count: 3, next: null },
     ];
-    expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/hres\/742 is listed twice/);
+    expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/read 2 distinct items but Congress.gov reports 3/);
+    // A second read that returns the missing item completes the list, and the repeats are merged.
+    const reread = [...pages, { items: [b, a], count: 3, next: "page 2" }, { items: [old], count: 3, next: null }];
+    const merged = parseLegislation(reread, "sponsored", "K000367", 119, today);
+    expect(merged.errors).toEqual([]);
+    expect(merged.links.map((l) => l.bill.id).sort()).toEqual([a, b].map((i) => `119-${String(i.type).toLowerCase()}-${i.number}`).sort());
+    // More distinct items than reported means the list changed between reads.
+    expect(parseLegislation(page([a, b, old]).map((p) => ({ ...p, count: 2 })), "sponsored", "K000367", 119, today).errors.join()).toMatch(/changed while it was being read/);
     // An item removed mid-read shifts the next one past the offset; the count changing between pages gives it away.
     const shrunk = [
       { items: [a, old], count: 4, next: "page 2" },

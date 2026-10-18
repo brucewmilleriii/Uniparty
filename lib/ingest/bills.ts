@@ -70,11 +70,13 @@ export interface ParsedLegislation {
 
 /**
  * Read a member's pages for the current Congress and check them: every item must be
- * a well-formed bill in a Congress no later than the current one, with no repeats,
- * and the whole list must be there: it has to end exactly at the count Congress.gov
- * reports, so a truncated response can't pass as complete. Items from earlier
- * Congresses are skipped wherever they appear, and the links come back sorted newest
- * first by their own date, since the source order is neither.
+ * a well-formed bill in a Congress no later than the current one, and the whole list
+ * must be there: the distinct items must number exactly the count Congress.gov reports,
+ * so a truncated or shifted read can't pass as complete. Congress.gov's order isn't
+ * stable between requests, so offset paging repeats some items and skips others; the
+ * pages may come from several reads of the list, and repeats are merged. Items from
+ * earlier Congresses are skipped wherever they appear, and the links come back sorted
+ * newest first by their own date, since the source order is neither.
  */
 export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date()): ParsedLegislation {
   const at = `${bioguideId} ${kind}`;
@@ -85,12 +87,12 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   let listed = 0;
 
   for (const item of pages.flatMap((p) => p.items)) {
-    listed++;
-    // Every item, whatever its Congress, so a repeat at a page boundary (the list changed
-    // while being read by offset) can't hide an item that was pushed past it.
+    // Every item, whatever its Congress, is counted once, so the completeness check below
+    // sees through repeats to any item they pushed out of the read.
     const key = str(item.url).split("?")[0];
-    if (key && seen.has(key)) errors.push(`${at}: ${key} is listed twice; the list probably changed while it was being read`);
+    if (key && seen.has(key)) continue;
     if (key) seen.add(key);
+    listed++;
     const c = Number(item.congress);
     const date = str(item.introducedDate);
     if (!Number.isInteger(c) || c < 1 || c > congress) {
@@ -152,7 +154,8 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   if (!pages.length) errors.push(`${at}: no pages fetched`);
   else if (last.next !== null) errors.push(`${at}: stopped before the end of the list`);
   else if (pages.some((p) => p.count !== last.count)) errors.push(`${at}: list changed while it was being read (count went from ${pages[0].count} to ${last.count})`);
-  else if (listed !== last.count) errors.push(`${at}: list ended after ${listed} items but Congress.gov reports ${last.count}; response looks truncated`);
+  else if (listed < last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; some were never returned`);
+  else if (listed > last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; the list changed while it was being read`);
   return { links, amendments, errors };
 }
 
