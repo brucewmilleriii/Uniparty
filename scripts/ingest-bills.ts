@@ -193,8 +193,16 @@ async function main() {
   const members: Record<string, MemberBills> = {};
   const samples: { kind: LegislationKind; id: string; link: ParsedLink }[] = [];
   let done = 0;
+  // Stop reading before the job's 360-minute timeout kills it, so a slow run still ends with the error summary.
+  const deadline = Date.now() + 330 * 60_000;
+  let outOfTime = false;
 
   await pool(ids, async (id) => {
+    if (Date.now() > deadline) {
+      if (!outOfTime) errors.push(`ran out of time after ${done} of ${ids.length} members (${extraReads} extra reads so far)`);
+      outOfTime = true;
+      return;
+    }
     const sources: MemberBills["sources"] = [];
     const sp = await fetchList(id, "sponsored", sources);
     const co = sp && (await fetchList(id, "cosponsored", sources));
@@ -208,7 +216,7 @@ async function main() {
     members[id] = toMemberBills(s, c, sources, fetchedAt, bills);
     for (const link of s.links) samples.push({ kind: "sponsored", id, link });
     for (const link of c.links) samples.push({ kind: "cosponsored", id, link });
-    if (++done % 50 === 0) console.log(`  ${done}/${ids.length} members read`);
+    if (++done % 50 === 0) console.log(`  ${done}/${ids.length} members read; ${calls} calls, ${reReadLists} lists read again (${extraReads} extra reads)`);
   });
   console.log(`Read ${done} members for the ${congress}th Congress; ${missing.length} not on Congress.gov${missing.length ? ` (${missing.join(", ")})` : ""}.`);
 
