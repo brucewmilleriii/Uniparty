@@ -3,9 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import snapshot from "@/data/roster.json";
 import billsSnapshot from "@/data/bills.json";
 import votesSnapshot from "@/data/votes.json";
+import financeSnapshot from "@/data/finance.json";
+import { isCongressionalId, toMemberFinance } from "@/lib/ingest/finance";
 import { compareVotes } from "@/lib/ingest/votes";
 import { partyMajority, type Side } from "@/lib/summary";
-import type { Bill, BillsSnapshot, Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
+import type { Bill, BillsSnapshot, CampaignTotals, FinanceSnapshot, Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
 
 /*
  * Roster reads. With SUPABASE_URL and SUPABASE_ANON_KEY set, members come from
@@ -269,4 +271,76 @@ export async function getMemberBills(m: Member): Promise<MemberBillsView> {
 export function billsStatus() {
   const { congress, fetchedAt } = localBills.provenance;
   return { congress, members: Object.keys(localBills.members).length, bills: Object.keys(localBills.bills).length, fetchedAt };
+}
+
+export interface MemberFinanceView {
+  /** Two-year cycle, named for its even year. */
+  cycle: number;
+  /** Null when the member has no FEC candidate id, or wasn't in the last pull. The seat's campaign comes first. */
+  campaigns: CampaignTotals[] | null;
+  source: string;
+  sourceHome: string;
+  fetchedAt: string | null;
+}
+
+const localFinance = financeSnapshot as unknown as FinanceSnapshot;
+
+function financeFromSnapshot(m: Member): MemberFinanceView {
+  const { cycle, fetchedAt, source, sourceHome } = localFinance.provenance;
+  return { cycle, campaigns: localFinance.members[m.bioguideId]?.campaigns ?? null, source, sourceHome, fetchedAt };
+}
+
+async function financeFromSupabase(m: Member, url: string, key: string): Promise<MemberFinanceView> {
+  const db = createClient(url, key, { auth: { persistSession: false } });
+  const { cycle, source, sourceHome } = localFinance.provenance;
+  const [rows, run] = await Promise.all([
+    db.from("campaign_totals").select("*").eq("bioguide_id", m.bioguideId).eq("cycle", cycle),
+    db.from("ingest_runs").select("fetched_at").eq("source", "finance").eq("status", "ok").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (rows.error) throw new Error(`Supabase campaign_totals: ${rows.error.message}`);
+  const fetchedAt = run.data?.fetched_at ?? null;
+  const campaigns: CampaignTotals[] = rows.data.map((r) => ({
+    candidateId: r.candidate_id,
+    office: r.office,
+    electionYear: r.election_year,
+    cycle: r.cycle,
+    coverageStart: r.coverage_start,
+    coverageEnd: r.coverage_end,
+    lastReport: r.last_report,
+    // Postgres numerics arrive as strings.
+    receipts: Number(r.receipts),
+    disbursements: Number(r.disbursements),
+    cashOnHand: Number(r.cash_on_hand),
+    debts: Number(r.debts),
+    individualItemized: Number(r.individual_itemized),
+    individualUnitemized: Number(r.individual_unitemized),
+    partyCommittees: Number(r.party_committees),
+    otherCommittees: Number(r.other_committees),
+    candidateContributions: Number(r.candidate_contributions),
+    candidateLoans: Number(r.candidate_loans),
+    otherLoans: Number(r.other_loans),
+    transfersIn: Number(r.transfers_in),
+    otherReceipts: Number(r.other_receipts),
+    pageUrl: r.page_url,
+    sourceUrl: r.source_url,
+    sha256: r.sha256,
+    fetchedAt: r.fetched_at,
+  }));
+  const known = fetchedAt !== null && m.fecIds.some(isCongressionalId);
+  return { cycle, campaigns: known ? toMemberFinance(m, campaigns, fetchedAt).campaigns : null, source, sourceHome, fetchedAt };
+}
+
+/** A member's campaign money for the current two-year cycle, from the FEC. */
+export async function getMemberFinance(m: Member): Promise<MemberFinanceView> {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+  if (url && key) return financeFromSupabase(m, url, key);
+  return financeFromSnapshot(m);
+}
+
+/** Freshness of the campaign finance data, for the health check. */
+export function financeStatus() {
+  const { cycle, fetchedAt } = localFinance.provenance;
+  const members = Object.values(localFinance.members);
+  return { cycle, members: members.length, campaigns: members.reduce((n, m) => n + m.campaigns.length, 0), fetchedAt };
 }
