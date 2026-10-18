@@ -68,6 +68,54 @@ export interface ParsedLegislation {
   errors: string[];
 }
 
+/** Most full reads of one list before giving up on collecting every item. */
+export const MAX_READS = 6;
+
+/**
+ * Read one member list, all pages. Congress.gov's order shifts between requests, so a
+ * single pass by offset repeats some items and misses others; the list is read again
+ * until the distinct items reach the reported count, and every pass is returned for
+ * parseLegislation to merge and check. A pass whose count differs from the earlier
+ * ones (the list really changed) replaces them. `readPage` returns null on a 404,
+ * which on the very first page means the member has no list (null is returned).
+ */
+export async function readWholeList<S>(
+  at: string,
+  readPage: (offset: number) => Promise<{ page: LegislationPage; source: S } | null>,
+  maxReads = MAX_READS,
+): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number } | null> {
+  let all: LegislationPage[] = [];
+  let kept: S[] = [];
+  let reads = 0;
+  while (reads < maxReads) {
+    reads++;
+    const pages: LegislationPage[] = [];
+    const read: S[] = [];
+    for (let offset = 0; ; ) {
+      const res = await readPage(offset);
+      if (!res) {
+        // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
+        if (pages.length === 0 && reads === 1) return null;
+        throw new Error(`${at}: offset ${offset} returned 404 partway through the list`);
+      }
+      read.push(res.source);
+      pages.push(res.page);
+      if (!needsNextPage(res.page)) break;
+      offset += res.page.items.length;
+      if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
+    }
+    if (all.length && (all[0].count !== pages[0].count || !pages.every((p) => p.count === pages[0].count))) {
+      all = [];
+      kept = [];
+    }
+    all.push(...pages);
+    kept.push(...read);
+    const distinct = new Set(all.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
+    if (all.every((p) => p.count === all[0].count) && distinct >= all[0].count) break;
+  }
+  return { pages: all, sources: kept, reads };
+}
+
 /**
  * What identifies a list item across reads: its API URL, or for one without a URL
  * (seen on old records) its Congress, type and number. Empty if it has neither.

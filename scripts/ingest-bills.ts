@@ -28,11 +28,10 @@ import {
   checkCosponsor,
   checkSponsor,
   cosponsorsNext,
-  itemKey,
   memberLegislationUrl,
-  needsNextPage,
   parseLegislation,
   readLegislationPage,
+  readWholeList,
   toMemberBills,
   validateBillsSnapshot,
   type LegislationKind,
@@ -159,51 +158,19 @@ async function pool<T>(items: T[], fn: (item: T) => Promise<void>) {
 const errors: string[] = [];
 const missing: string[] = [];
 
-/** Read one whole list, once more if its count changed mid-read (an item added or removed shifts the offsets). */
-/** Most full reads of one list before giving up on collecting every item. */
-const MAX_READS = 6;
 let reReads = 0;
 
-/**
- * Read one member list, all pages. Congress.gov's order shifts between requests, so a
- * single pass by offset repeats some items and misses others; the list is read again
- * until the distinct items reach the reported count, and every pass is returned for
- * parseLegislation to merge and check. A pass whose count differs from the earlier
- * ones (the list really changed) replaces them.
- */
+/** Read one member list in full; see readWholeList for how gaps are filled. */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
-  let all: LegislationPage[] = [];
-  let kept: MemberBills["sources"] = [];
-  for (let attempt = 1; attempt <= MAX_READS; attempt++) {
-    if (attempt > 1) reReads++;
-    const pages: LegislationPage[] = [];
-    const read: MemberBills["sources"] = [];
-    for (let offset = 0; ; ) {
-      const url = memberLegislationUrl(id, kind, offset, base);
-      const res = await get(url);
-      if (!res) {
-        // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
-        if (pages.length === 0 && attempt === 1) return null;
-        throw new Error(`${id} ${kind}: ${publicUrl(url)} returned 404 partway through the list`);
-      }
-      const page = readLegislationPage(res.body, kind);
-      read.push({ url: publicUrl(url), sha256: sha(res.text) });
-      pages.push(page);
-      if (!needsNextPage(page)) break;
-      offset += page.items.length;
-      if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${id} ${kind}: more pages than the reported count allows; refusing to keep paging`);
-    }
-    if (all.length && (all[0].count !== pages[0].count || !pages.every((p) => p.count === pages[0].count))) {
-      all = [];
-      kept = [];
-    }
-    all.push(...pages);
-    kept.push(...read);
-    const distinct = new Set(all.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
-    if (all.every((p) => p.count === all[0].count) && distinct >= all[0].count) break;
-  }
-  sources.push(...kept);
-  return all;
+  const list = await readWholeList(`${id} ${kind}`, async (offset) => {
+    const url = memberLegislationUrl(id, kind, offset, base);
+    const res = await get(url);
+    return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
+  });
+  if (!list) return null;
+  reReads += list.reads - 1;
+  sources.push(...list.sources);
+  return list.pages;
 }
 
 async function main() {

@@ -10,6 +10,7 @@ import {
   needsNextPage,
   parseLegislation,
   readLegislationPage,
+  readWholeList,
   toMemberBills,
   validateBillsSnapshot,
   type LegislationPage,
@@ -156,6 +157,69 @@ describe("parseLegislation", () => {
     expect(parseLegislation(page([{ ...a, congress: 120 }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/impossible Congress/);
     expect(parseLegislation(page([{ ...a, title: "" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/no title/);
     expect(parseLegislation(page([{ ...a, url: "https://api.congress.gov/v3/bill/119/s/1" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/points at/);
+  });
+});
+
+describe("readWholeList", () => {
+  const item = (n: number) => ({ congress: 118, type: "HR", number: String(n), introducedDate: "2023-05-01", url: `https://api.congress.gov/v3/bill/118/hr/${n}` });
+  const items = Array.from({ length: 30 }, (_, i) => item(i + 1));
+  /** A server that pages `list()` by offset, `size` a page, calling `list` afresh for every request. */
+  const server = (list: () => Record<string, unknown>[], size = 10) => {
+    let calls = 0;
+    const readPage = async (offset: number) => {
+      calls++;
+      const all = list();
+      const page: LegislationPage = { items: all.slice(offset, offset + size), count: all.length, next: offset + size < all.length ? "more" : null };
+      return { page, source: offset };
+    };
+    return { readPage, calls: () => calls };
+  };
+  const parse = (pages: LegislationPage[]) => parseLegislation(pages, "sponsored", "T000001", 119, today);
+  // A seeded shuffle, so the test doesn't depend on Math.random.
+  const shuffler = (seed: number) => () => {
+    const a = [...items];
+    for (let i = a.length - 1; i > 0; i--) {
+      seed = (seed * 1103515245 + 12345) % 2 ** 31;
+      const j = seed % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  it("reads a stable list once", async () => {
+    const s = server(() => items);
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    expect(list?.reads).toBe(1);
+    expect(s.calls()).toBe(3);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
+  it("reads a reshuffling list again until every item has come back", async () => {
+    const list = await readWholeList("T000001 sponsored", server(shuffler(7)).readPage, 20);
+    expect(list!.reads).toBeGreaterThan(1);
+    expect(list!.sources.length).toBe(list!.reads * 3);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
+  it("drops earlier reads when the count changes, and fails if the gap never fills", async () => {
+    let n = 0;
+    // Item 30 is withdrawn after the first request, so the first read's count disagrees with itself.
+    const s = server(() => (n++ < 1 ? items : items.slice(0, 29)));
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    expect(list!.reads).toBe(2);
+    expect(list!.pages.every((p) => p.count === 29)).toBe(true);
+    expect(parse(list!.pages).errors).toEqual([]);
+
+    const stuck = server(() => [...items.slice(0, 29), item(1)]);
+    const short = await readWholeList("T000001 sponsored", stuck.readPage, 4);
+    expect(short!.reads).toBe(4);
+    expect(parse(short!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
+  });
+
+  it("returns null for a member with no list, but throws on a 404 partway through", async () => {
+    expect(await readWholeList("T000001 sponsored", async () => null)).toBeNull();
+    const s = server(() => items);
+    await expect(readWholeList("T000001 sponsored", async (o) => (o === 0 ? s.readPage(o) : null))).rejects.toThrow(/404 partway/);
   });
 });
 
