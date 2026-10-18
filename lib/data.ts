@@ -4,6 +4,7 @@ import snapshot from "@/data/roster.json";
 import billsSnapshot from "@/data/bills.json";
 import votesSnapshot from "@/data/votes.json";
 import { compareVotes } from "@/lib/ingest/votes";
+import { partyMajority, type Side } from "@/lib/summary";
 import type { Bill, BillsSnapshot, Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
 
 /*
@@ -87,6 +88,8 @@ export interface MemberVoteRow {
   vote: Omit<Vote, "positions">;
   /** The member's position, as the chamber recorded it. */
   position: string;
+  /** How most of the member's party voted, Yea/Nay only; null when unknown (independents, ties, or no positions to count). */
+  partyMajority: Side | null;
 }
 
 export interface MemberVotes {
@@ -100,13 +103,18 @@ export interface MemberVotes {
 }
 
 const localVotes = votesSnapshot as unknown as VotesSnapshot;
+const snapshotParty = new Map(local.members.map((m) => [m.bioguideId, m.party]));
 
 function votesFromSnapshot(m: Member): MemberVotes {
   const { fetchedAt, window } = localVotes.provenance;
   const rows = localVotes.votes
     .filter((v) => v.chamber === m.chamber && v.positions[m.bioguideId] !== undefined)
     .sort(compareVotes)
-    .map(({ positions, ...vote }) => ({ vote, position: positions[m.bioguideId] }));
+    .map(({ positions, ...vote }) => ({
+      vote,
+      position: positions[m.bioguideId],
+      partyMajority: partyMajority(positions, (id) => snapshotParty.get(id), m.party),
+    }));
   return { rows, window, fetchedAt, ...localVotes.provenance[m.chamber] };
 }
 
@@ -148,6 +156,8 @@ async function votesFromSupabase(m: Member, url: string, key: string): Promise<M
         fetchedAt: r.fetched_at,
       },
       position: byVote.get(r.id)!,
+      // Counting a party's majority needs every member's position; this path only reads the member's own.
+      partyMajority: null,
     }))
     .sort((a, b) => compareVotes(a.vote, b.vote));
   return { rows, window, fetchedAt: run.data?.fetched_at ?? null, ...localVotes.provenance[m.chamber] };
