@@ -50,3 +50,22 @@ export function sourceLinks(m: Member) {
     bills: `https://www.congress.gov/member/${m.bioguideId}`,
   };
 }
+
+/** Whole dollars, "$2,467,979", or to the cent, "$2,467,978.64". */
+export function fmtUsd(n: number, cents = false): string {
+  const digits = cents ? 2 : 0;
+  return `${n < 0 ? "−" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+}
+
+/** Compact dollars for headline figures: "$2.5M", "$384K", "$950". */
+export function fmtUsdShort(n: number): string {
+  const a = Math.abs(n);
+  const sign = n < 0 ? "−" : "";
+  if (a >= 999_950_000) return `${sign}$${(a / 1e9).toFixed(1).replace(/\.0$/, "")}B`;
+  if (a >= 999_500) return `${sign}$${(a / 1e6).toFixed(1).replace(/\.0$/, "")}M`;
+  if (a >= 1e4) return `${sign}$${Math.round(a / 1e3)}K`;
+  return fmtUsd(n);
+}
+
+/** "2025–26" for the cycle ending in 2026. */
+export const cycleLabel = (cycle: number) => `${cycle - 1}–${String(cycle).slice(2)}`;

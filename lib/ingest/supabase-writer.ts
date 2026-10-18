@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { BillsSnapshot, RosterSnapshot, Vote } from "@/lib/types";
+import type { BillsSnapshot, FinanceSnapshot, RosterSnapshot, Vote } from "@/lib/types";
 
 /**
  * Upsert a validated roster into Supabase and record the run in ingest_runs.
@@ -175,4 +175,67 @@ export async function writeBillsToSupabase(url: string, serviceKey: string, snap
     source_files: members.flatMap(([, m]) => m.sources),
   });
   return members.length;
+}
+
+/**
+ * Upsert each member's campaign totals for the cycle and record the run. Rows for
+ * earlier cycles, and for members who have left office, stay as history.
+ */
+export async function writeFinanceToSupabase(url: string, serviceKey: string, snap: FinanceSnapshot): Promise<number> {
+  const db = createClient(url, serviceKey, { auth: { persistSession: false } });
+  const { fetchedAt } = snap.provenance;
+
+  const fail = async (step: string, message: string): Promise<never> => {
+    await db.from("ingest_runs").insert({ source: "finance", fetched_at: fetchedAt, status: "failed", error: `${step}: ${message}` });
+    throw new Error(`Supabase ${step} failed: ${message}`);
+  };
+
+  const rows = Object.entries(snap.members).flatMap(([bioguide_id, m]) =>
+    m.campaigns.map((c) => ({
+      candidate_id: c.candidateId,
+      cycle: c.cycle,
+      bioguide_id,
+      office: c.office,
+      election_year: c.electionYear,
+      coverage_start: c.coverageStart,
+      coverage_end: c.coverageEnd,
+      last_report: c.lastReport,
+      receipts: c.receipts,
+      disbursements: c.disbursements,
+      cash_on_hand: c.cashOnHand,
+      debts: c.debts,
+      individual_itemized: c.individualItemized,
+      individual_unitemized: c.individualUnitemized,
+      party_committees: c.partyCommittees,
+      other_committees: c.otherCommittees,
+      candidate_contributions: c.candidateContributions,
+      candidate_loans: c.candidateLoans,
+      other_loans: c.otherLoans,
+      transfers_in: c.transfersIn,
+      other_receipts: c.otherReceipts,
+      page_url: c.pageUrl,
+      source_url: c.sourceUrl,
+      sha256: c.sha256,
+      fetched_at: c.fetchedAt,
+    })),
+  );
+  const up = await db.from("campaign_totals").upsert(rows, { onConflict: "candidate_id,cycle" });
+  if (up.error) await fail("campaign_totals upsert", up.error.message);
+  const coverage = Object.entries(snap.members).map(([bioguide_id, m]) => ({
+    bioguide_id,
+    cycle: snap.provenance.cycle,
+    candidate_ids: m.candidateIds,
+    fetched_at: m.fetchedAt,
+  }));
+  const cov = await db.from("finance_coverage").upsert(coverage, { onConflict: "bioguide_id,cycle" });
+  if (cov.error) await fail("finance_coverage upsert", cov.error.message);
+
+  await db.from("ingest_runs").insert({
+    source: "finance",
+    fetched_at: fetchedAt,
+    status: "ok",
+    record_count: rows.length,
+    source_files: [...snap.sources, ...rows.map((r) => ({ url: r.source_url, sha256: r.sha256 }))],
+  });
+  return rows.length;
 }

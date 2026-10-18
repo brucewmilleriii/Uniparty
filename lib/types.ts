@@ -166,3 +166,67 @@ export interface BillsSnapshot {
   /** Keyed by bioguide id. */
   members: Record<string, MemberBills>;
 }
+
+/**
+ * One campaign's money for a two-year cycle, as the FEC totals the reports its
+ * authorized committees filed. Receipts are the sum of the receipt lines below.
+ */
+export interface CampaignTotals {
+  /** FEC candidate id: H… for a House campaign, S… for Senate. */
+  candidateId: string;
+  office: "H" | "S";
+  /** The election the campaign is raising for. */
+  electionYear: number | null;
+  /** Two-year cycle, named for its even year (2026 = 2025–26). */
+  cycle: number;
+  coverageStart: string;
+  coverageEnd: string;
+  /** The latest report in the totals, e.g. "OCTOBER QUARTERLY 2026". */
+  lastReport: string | null;
+  receipts: number;
+  disbursements: number;
+  /** At the end of the latest report. */
+  cashOnHand: number;
+  debts: number;
+  /** Individuals who gave more than $200 in total, whom the committee must name. */
+  individualItemized: number;
+  /** Individuals who gave $200 or less. */
+  individualUnitemized: number;
+  partyCommittees: number;
+  /** PACs and other non-party committees. */
+  otherCommittees: number;
+  candidateContributions: number;
+  candidateLoans: number;
+  otherLoans: number;
+  transfersIn: number;
+  /** Other receipts, offsets to operating expenditures and any public funds. */
+  otherReceipts: number;
+  /** This campaign on fec.gov. */
+  pageUrl: string;
+  /** The FEC API record it was read from (no key). */
+  sourceUrl: string;
+  sha256: string;
+  fetchedAt: string;
+}
+
+export interface MemberFinance {
+  /** The House and Senate candidate ids the pull asked the FEC about for this member. */
+  candidateIds: string[];
+  /** The campaign for the member's current seat first. Empty when no reports were filed in the cycle. */
+  campaigns: CampaignTotals[];
+  fetchedAt: string;
+}
+
+export interface FinanceSnapshot {
+  provenance: {
+    source: string;
+    sourceHome: string;
+    /** Null until the first successful pull. */
+    fetchedAt: string | null;
+    cycle: number;
+  };
+  /** The candidates/totals pages used to find and cross-check each campaign. */
+  sources: { url: string; sha256: string }[];
+  /** Keyed by bioguide id; members with no FEC candidate id are left out. */
+  members: Record<string, MemberFinance>;
+}

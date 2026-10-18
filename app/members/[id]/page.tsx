@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Bills from "@/components/Bills";
+import Money from "@/components/Money";
 import Provenance from "@/components/Provenance";
 import Record from "@/components/Record";
 import RecentVotes from "@/components/RecentVotes";
-import { getMember, getMemberBills, getMemberVotes, getRoster } from "@/lib/data";
-import { PARTY, STATES, ageOn, roleTitle, sourceLinks } from "@/lib/format";
+import { getMember, getMemberBills, getMemberFinance, getMemberVotes, getRoster } from "@/lib/data";
+import { PARTY, STATES, ageOn, cycleLabel, fmtDate, fmtUsd, fmtUsdShort, roleTitle, sourceLinks } from "@/lib/format";
 import { summarizeVotes } from "@/lib/summary";
 
 export const revalidate = 3600;
@@ -27,7 +28,8 @@ export default async function MemberPage({ params }: Props) {
   const { id } = await params;
   const { member: m, roster } = await getMember(id);
   if (!m) notFound();
-  const [votes, bills] = await Promise.all([getMemberVotes(m), getMemberBills(m)]);
+  const [votes, bills, finance] = await Promise.all([getMemberVotes(m), getMemberBills(m), getMemberFinance(m)]);
+  const money = finance.campaigns[0];
 
   const L = sourceLinks(m);
   const now = new Date();
@@ -44,6 +46,7 @@ export default async function MemberPage({ params }: Props) {
   if (s.total) numbers.push({ v: String(s.missed), k: `Roll calls missed of ${s.total}` });
   if (bills.sponsoredCount !== null) numbers.push({ v: bills.sponsoredCount.toLocaleString("en-US"), k: "Bills sponsored this Congress" });
   if (bills.cosponsoredCount !== null) numbers.push({ v: bills.cosponsoredCount.toLocaleString("en-US"), k: "Bills cosponsored" });
+  if (money) numbers.push({ v: fmtUsdShort(money.receipts), k: `Raised in ${cycleLabel(money.cycle)}` });
 
   return (
     <>
@@ -103,6 +106,13 @@ export default async function MemberPage({ params }: Props) {
                 cosponsored {(bills.cosponsoredCount ?? 0).toLocaleString("en-US")}.
               </p>
             )}
+            {money && money.receipts > 0 && (
+              <p>
+                Their {money.office === "S" ? "Senate" : "House"} campaign raised {fmtUsd(money.receipts)} in the {cycleLabel(money.cycle)} cycle
+                through {fmtDate(money.coverageEnd)}, {Math.round(((money.individualItemized + money.individualUnitemized) / (money.receipts || 1)) * 100)}% of
+                it from individual donors, and had {fmtUsd(money.cashOnHand)} on hand.
+              </p>
+            )}
           </div>
         )}
         <Provenance data={roster} />
@@ -125,6 +135,8 @@ export default async function MemberPage({ params }: Props) {
 
       <Bills bills={bills} lastName={m.lastName} allUrl={L.bills} />
 
+      <Money finance={finance} lastName={m.lastName} allUrl={L.fec} />
+
       <section className="sec" aria-labelledby="more-h">
         <div className="three">
           <div>
@@ -145,17 +157,16 @@ export default async function MemberPage({ params }: Props) {
             )}
           </div>
           <div>
-            <h3 className="sec-h">Money and trades</h3>
+            <h3 className="sec-h">Trades and filings</h3>
             <p className="panel-note">
-              Campaign money and stock trades are being connected next. Until then, these go straight to the official record for{" "}
-              {STATES[m.state] ?? m.state}’s {role}:
+              Stock trades are being connected next. Until then, these go straight to the official record for {STATES[m.state] ?? m.state}’s {role}:
             </p>
             <ul className="srclinks">
               <li>
                 <a href={L.fec} target="_blank" rel="noopener">
-                  Campaign money ↗
+                  Every FEC filing ↗
                 </a>
-                <span>FEC candidate summary</span>
+                <span>FEC candidate page</span>
               </li>
               <li>
                 <a href={L.disclosures} target="_blank" rel="noopener">
