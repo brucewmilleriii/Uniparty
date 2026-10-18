@@ -29,8 +29,9 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    # A full run reads every page of every member's lists, paced under the API's hourly limit.
-    timeout-minutes: 300
+    # A full run reads every page of every member's lists, re-reading lists that come back
+    # short, paced under the API's hourly limit. 360 minutes is GitHub's maximum.
+    timeout-minutes: 360
     env:
       DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
     steps:

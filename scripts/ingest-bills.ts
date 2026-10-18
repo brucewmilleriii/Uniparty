@@ -29,10 +29,11 @@ import {
   checkSponsor,
   cosponsorsNext,
   memberLegislationUrl,
-  needsNextPage,
   parseLegislation,
   readLegislationPage,
+  readWholeList,
   toMemberBills,
+  unconfirmedError,
   validateBillsSnapshot,
   type LegislationKind,
   type LegislationPage,
@@ -63,7 +64,7 @@ const CONCURRENCY = 4;
  * Calls per hour this job allows itself. api.data.gov allows 5,000 an hour per key,
  * and the same key serves the FEC ingest, so this leaves room for it.
  */
-const HOURLY_BUDGET = 3600;
+const HOURLY_BUDGET = 4200;
 /** Wait for the key's hourly allowance to recover when fewer calls than this are left. */
 const RESERVE = 400;
 
@@ -86,6 +87,11 @@ const publicUrl = (url: string) => url.replace(base, API_BASE);
 let latest = Infinity;
 let nextSlot = 0;
 let calls = 0;
+// The job's timeout is 360 minutes. New members stop at 330; a rate-limit wait that would run past 350 fails the run
+// with a message, rather than letting the job be killed with no explanation.
+const started = Date.now();
+const MEMBER_DEADLINE = started + 330 * 60_000;
+const HARD_DEADLINE = started + 350 * 60_000;
 
 /** Space requests evenly at HOURLY_BUDGET an hour, and back off when the key is nearly spent. */
 async function pace() {
@@ -97,6 +103,7 @@ async function pace() {
     nextSlot = Math.max(nextSlot, now + 300_000);
   }
   const at = Math.max(now, nextSlot);
+  if (at > HARD_DEADLINE) throw new Error(`Out of time waiting on the API's rate limit after ${calls} calls (${extraReads} extra reads)`);
   nextSlot = at + 3_600_000 / HOURLY_BUDGET;
   if (at > now) await sleep(at - now);
 }
@@ -158,31 +165,23 @@ async function pool<T>(items: T[], fn: (item: T) => Promise<void>) {
 const errors: string[] = [];
 const missing: string[] = [];
 
-/** Read one whole list, once more if its count changed mid-read (an item added or removed shifts the offsets). */
+let reReadLists = 0;
+let extraReads = 0;
+
+/** Read one member list in full; see readWholeList for how gaps are filled. */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
-  for (let attempt = 1; ; attempt++) {
-    const pages: LegislationPage[] = [];
-    const read: MemberBills["sources"] = [];
-    for (let offset = 0; ; ) {
-      const url = memberLegislationUrl(id, kind, offset, base);
-      const res = await get(url);
-      if (!res) {
-        // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
-        if (pages.length === 0) return null;
-        throw new Error(`${id} ${kind}: ${publicUrl(url)} returned 404 partway through the list`);
-      }
-      const page = readLegislationPage(res.body, kind);
-      read.push({ url: publicUrl(url), sha256: sha(res.text) });
-      pages.push(page);
-      if (!needsNextPage(page)) break;
-      offset += page.items.length;
-      if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${id} ${kind}: more pages than the reported count allows; refusing to keep paging`);
-    }
-    if (pages.every((p) => p.count === pages[0].count) || attempt >= 2) {
-      sources.push(...read);
-      return pages;
-    }
-  }
+  const list = await readWholeList(`${id} ${kind}`, async (offset) => {
+    const url = memberLegislationUrl(id, kind, offset, base);
+    const res = await get(url);
+    return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
+  });
+  if (!list) return null;
+  if (list.reads > 1) reReadLists++;
+  extraReads += list.reads - 1;
+  const unconfirmed = unconfirmedError(`${id} ${kind}`, list);
+  if (unconfirmed) errors.push(unconfirmed);
+  sources.push(...list.sources);
+  return list.pages;
 }
 
 async function main() {
@@ -200,8 +199,14 @@ async function main() {
   const members: Record<string, MemberBills> = {};
   const samples: { kind: LegislationKind; id: string; link: ParsedLink }[] = [];
   let done = 0;
+  let outOfTime = false;
 
   await pool(ids, async (id) => {
+    if (Date.now() > MEMBER_DEADLINE) {
+      if (!outOfTime) errors.push(`ran out of time after ${done} of ${ids.length} members (${extraReads} extra reads so far)`);
+      outOfTime = true;
+      return;
+    }
     const sources: MemberBills["sources"] = [];
     const sp = await fetchList(id, "sponsored", sources);
     const co = sp && (await fetchList(id, "cosponsored", sources));
@@ -215,7 +220,7 @@ async function main() {
     members[id] = toMemberBills(s, c, sources, fetchedAt, bills);
     for (const link of s.links) samples.push({ kind: "sponsored", id, link });
     for (const link of c.links) samples.push({ kind: "cosponsored", id, link });
-    if (++done % 50 === 0) console.log(`  ${done}/${ids.length} members read`);
+    if (++done % 50 === 0) console.log(`  ${done}/${ids.length} members read; ${calls} calls, ${reReadLists} lists read again (${extraReads} extra reads)`);
   });
   console.log(`Read ${done} members for the ${congress}th Congress; ${missing.length} not on Congress.gov${missing.length ? ` (${missing.join(", ")})` : ""}.`);
 
@@ -271,7 +276,7 @@ async function main() {
   }
 
   const total = (k: "sponsoredCount" | "cosponsoredCount") => Object.values(members).reduce((n, m) => n + m[k], 0);
-  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made`;
+  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made, ${reReadLists} lists read again to fill gaps (${extraReads} extra reads)`;
   if (check) {
     console.log(`Check passed: ${summary}. Nothing written.`);
     return;

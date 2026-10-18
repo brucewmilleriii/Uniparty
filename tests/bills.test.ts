@@ -10,7 +10,9 @@ import {
   needsNextPage,
   parseLegislation,
   readLegislationPage,
+  readWholeList,
   toMemberBills,
+  unconfirmedError,
   validateBillsSnapshot,
   type LegislationPage,
 } from "@/lib/ingest/bills";
@@ -111,7 +113,7 @@ describe("parseLegislation", () => {
 
   it("rejects a list that ends short of the count Congress.gov reports", () => {
     const p = parseLegislation([{ ...klobSponsored, next: null }], "sponsored", "K000367", 119, today);
-    expect(p.errors.join()).toMatch(/ended after 8 items but Congress.gov reports 1433/);
+    expect(p.errors.join()).toMatch(/read 8 distinct items but Congress.gov reports 1433/);
   });
 
   it("rejects a list that stopped paging too early", () => {
@@ -122,14 +124,22 @@ describe("parseLegislation", () => {
   it("rejects repeats, future dates and unrecognisable bills", () => {
     const [a, b] = klobSponsored.items;
     const page = (items: Record<string, unknown>[]) => [{ items, count: items.length, next: null }];
-    expect(parseLegislation(page([a, a]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/listed twice/);
-    // A repeat of an earlier-Congress item across a page boundary means the list shifted and an item may be missing.
+    // A repeat counts once, so the item it pushed out of the read shows up as missing.
+    expect(parseLegislation([{ items: [a, a], count: 2, next: null }], "sponsored", "K000367", 119, today).errors.join()).toMatch(/read 1 distinct items but Congress.gov reports 2/);
+    // That holds for an earlier-Congress item repeated across a page boundary too.
     const old = pelosiSponsored.items[0];
     const pages = [
       { items: [a, old], count: 3, next: "page 2" },
       { items: [old], count: 3, next: null },
     ];
-    expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/hres\/742 is listed twice/);
+    expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/read 2 distinct items but Congress.gov reports 3/);
+    // A second read that returns the missing item completes the list, and the repeats are merged.
+    const reread = [...pages, { items: [b, a], count: 3, next: "page 2" }, { items: [old], count: 3, next: null }];
+    const merged = parseLegislation(reread, "sponsored", "K000367", 119, today);
+    expect(merged.errors).toEqual([]);
+    expect(merged.links.map((l) => l.bill.id).sort()).toEqual([a, b].map((i) => `119-${String(i.type).toLowerCase()}-${i.number}`).sort());
+    // More distinct items than reported means the list changed between reads.
+    expect(parseLegislation(page([a, b, old]).map((p) => ({ ...p, count: 2 })), "sponsored", "K000367", 119, today).errors.join()).toMatch(/changed while it was being read/);
     // An item removed mid-read shifts the next one past the offset; the count changing between pages gives it away.
     const shrunk = [
       { items: [a, old], count: 4, next: "page 2" },
@@ -139,12 +149,154 @@ describe("parseLegislation", () => {
     // A malformed item from an earlier Congress isn't kept, so it isn't an error.
     const broken = { ...old, url: undefined, introducedDate: null };
     expect(parseLegislation(page([a, broken]), "sponsored", "K000367", 119, today).errors).toEqual([]);
+    // Without a URL it's still keyed by bill, so a repeat across reads counts once and the gap shows.
+    expect(parseLegislation([{ items: [a, broken, broken], count: 3, next: null }], "sponsored", "K000367", 119, today).errors.join()).toMatch(/read 2 distinct items but Congress.gov reports 3/);
+    expect(parseLegislation(page([a, { congress: 118 }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/no URL or bill number/);
     expect(parseLegislation(page([b, a]), "sponsored", "K000367", 119, today).errors).toEqual([]);
     expect(parseLegislation(page([{ ...a, introducedDate: "2027-01-01" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/future/);
     expect(parseLegislation(page([{ ...a, type: "XYZ" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/not a recognisable bill/);
     expect(parseLegislation(page([{ ...a, congress: 120 }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/impossible Congress/);
     expect(parseLegislation(page([{ ...a, title: "" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/no title/);
     expect(parseLegislation(page([{ ...a, url: "https://api.congress.gov/v3/bill/119/s/1" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/points at/);
+  });
+});
+
+describe("readWholeList", () => {
+  const item = (n: number) => ({ congress: 118, type: "HR", number: String(n), introducedDate: "2023-05-01", url: `https://api.congress.gov/v3/bill/118/hr/${n}` });
+  const items = Array.from({ length: 30 }, (_, i) => item(i + 1));
+  /** A server that pages `list()` by offset, `size` a page, calling `list` afresh for every request. */
+  const server = (list: () => Record<string, unknown>[], size = 10) => {
+    let calls = 0;
+    const readPage = async (offset: number) => {
+      calls++;
+      const all = list();
+      const page: LegislationPage = { items: all.slice(offset, offset + size), count: all.length, next: offset + size < all.length ? "more" : null };
+      return { page, source: offset };
+    };
+    return { readPage, calls: () => calls };
+  };
+  const parse = (pages: LegislationPage[]) => parseLegislation(pages, "sponsored", "T000001", 119, today);
+  // A seeded shuffle, so the test doesn't depend on Math.random.
+  const shuffler = (seed: number) => () => {
+    const a = [...items];
+    for (let i = a.length - 1; i > 0; i--) {
+      seed = (seed * 1103515245 + 12345) % 2 ** 31;
+      const j = seed % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  it("reads a stable list once", async () => {
+    const s = server(() => items);
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    expect(list?.reads).toBe(1);
+    expect(s.calls()).toBe(3);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
+  it("reads a reshuffling list again until every item has come back", async () => {
+    const list = await readWholeList("T000001 sponsored", server(shuffler(7)).readPage, 20);
+    expect(list!.reads).toBeGreaterThan(1);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.sources.length).toBe(list!.reads * 3);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
+  it("drops earlier reads when the count changes, and fails if the gap never fills", async () => {
+    let n = 0;
+    // Item 30 is withdrawn after the first request, so the first read's count disagrees with itself.
+    const s = server(() => (n++ < 1 ? items : items.slice(0, 29)));
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    // Read 2 is complete on its own but follows a dropped read, so read 3 confirms it.
+    expect(list!.reads).toBe(3);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.pages.every((p) => p.count === 29)).toBe(true);
+    expect(parse(list!.pages).errors).toEqual([]);
+
+    const stuck = server(() => [...items.slice(0, 29), item(1)]);
+    const short = await readWholeList("T000001 sponsored", stuck.readPage, 4);
+    expect(short!.reads).toBe(4);
+    expect(short!.confirmed).toBe(false);
+    expect(parse(short!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
+  });
+
+  it("starts over when a confirming read turns up an item the others never returned", async () => {
+    const [a, b, x, y] = [item(1), item(2), item(3), item(4)];
+    // Read 1 misses B; then X is withdrawn and Y added (count stays 3); read 2 misses Y.
+    const passes = [[a, x, a], [b, a, b], [a, b, y], [y, b, a]];
+    let n = 0;
+    const s = server(() => passes[Math.min(n++, passes.length - 1)], 250);
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(4);
+    const p = parse(list!.pages);
+    expect(p.errors).toEqual([]);
+    const keys = new Set(list!.pages.flatMap((pg) => pg.items.map((i) => i.url)));
+    expect([...keys].sort()).toEqual([a, b, y].map((i) => i.url).sort());
+  });
+
+  it("doesn't confirm a list until every item has come back again", async () => {
+    const [a, b, x, y] = [item(1), item(2), item(3), item(4)];
+    // X is withdrawn and Y added after read 1; the confirming read misses Y too, but X never returns.
+    const passes = [[a, x, a], [b, a, b], [a, b, a], [b, b, a]];
+    let n = 0;
+    const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, passes.length - 1)], 250).readPage);
+    expect(list!.confirmed).toBe(false);
+    // The merged {A, X, B} matches the count, so the parser passes it; only the unconfirmed error blocks it.
+    expect(parse(list!.pages).errors).toEqual([]);
+    expect(unconfirmedError("T000001 sponsored", list!)).toMatch(/complete but not confirmed after 12 reads/);
+    // A later read that returns Y starts over and settles on the real list.
+    const later = [...passes.slice(0, 3), [y, a, b], [a, y, b]];
+    let m = 0;
+    const fixed = await readWholeList("T000001 sponsored", server(() => later[Math.min(m++, later.length - 1)], 250).readPage);
+    expect(fixed!.confirmed).toBe(true);
+    expect(new Set(fixed!.pages.flatMap((pg) => pg.items.map((i) => i.url)))).toEqual(new Set([a, b, y].map((i) => i.url)));
+  });
+
+  it("starts over when merged reads hold more items than the count", async () => {
+    const [a, b, x, y] = [item(1), item(2), item(3), item(4)];
+    // X is withdrawn and Y added between reads 1 and 2 (count stays 3), so the merge holds four items.
+    const passes = [[a, x, a], [b, y, b], [a, b, y], [y, a, b]];
+    let n = 0;
+    const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, passes.length - 1)], 250).readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(4);
+    expect(parse(list!.pages).errors).toEqual([]);
+    expect(new Set(list!.pages.flatMap((pg) => pg.items.map((i) => i.url)))).toEqual(new Set([a, b, y].map((i) => i.url)));
+  });
+
+  it("drops a read whose own pages disagree on the count once a later read does", async () => {
+    // An item is added during read 1's second page and withdrawn again before read 2.
+    let n = 0;
+    const s = server(() => (++n === 2 ? [...items, item(31)] : items));
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(3);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
+  it("reports an unconfirmed list when the reads run out", async () => {
+    const [a, b, x] = [item(1), item(2), item(3)];
+    const passes = [[a, x, a], [b, a, b]];
+    let n = 0;
+    const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, 1)], 250).readPage, 2);
+    expect(list!.confirmed).toBe(false);
+    expect(unconfirmedError("T000001 sponsored", list!)).toMatch(/complete but not confirmed after 2 reads/);
+    const short = { pages: [{ items: [item(1)], count: 3, next: null }], reads: 12, confirmed: false };
+    expect(unconfirmedError("T000001 sponsored", short)).toMatch(/still short after 12 reads \(1 of 3 items\)/);
+    expect(unconfirmedError("T000001 sponsored", { ...short, confirmed: true })).toBeNull();
+  });
+
+  it("refuses to keep paging past what the reported count allows", async () => {
+    const endless = async (offset: number) => ({ page: { items: [item(offset + 1)], count: 1, next: "more" } as LegislationPage, source: offset });
+    await expect(readWholeList("T000001 sponsored", endless)).rejects.toThrow(/more pages than the reported count allows/);
+  });
+
+  it("returns null for a member with no list, but throws on a 404 partway through", async () => {
+    expect(await readWholeList("T000001 sponsored", async () => null)).toBeNull();
+    const s = server(() => items);
+    await expect(readWholeList("T000001 sponsored", async (o) => (o === 0 ? s.readPage(o) : null))).rejects.toThrow(/404 partway/);
   });
 });
 

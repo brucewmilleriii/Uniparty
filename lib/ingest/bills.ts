@@ -68,13 +68,117 @@ export interface ParsedLegislation {
   errors: string[];
 }
 
+/** Most full reads of one list before giving up on collecting every item. */
+export const MAX_READS = 12;
+
+/**
+ * Read one member list, all pages. Congress.gov's order shifts between requests, so a
+ * single pass by offset repeats some items and misses others; the list is read again
+ * until the distinct items reach the reported count, and every pass is returned for
+ * parseLegislation to merge and check. A list assembled from several passes is then
+ * confirmed by further passes: together they must return every item again and nothing
+ * new. A new item, or one that never comes back, means the list changed while being
+ * read (say, one cosponsorship withdrawn and another added, which leaves the count
+ * alone); a new item drops the earlier passes and starts over from that one. A pass
+ * whose count differs from the earlier ones, or that takes the merged items past the
+ * count, also replaces them. If the reads run out first, `confirmed` is false and the caller
+ * must not publish the list. `readPage` returns null on a 404, which on the very
+ * first page means the member has no list (null is returned).
+ */
+export async function readWholeList<S>(
+  at: string,
+  readPage: (offset: number) => Promise<{ page: LegislationPage; source: S } | null>,
+  maxReads = MAX_READS,
+): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean } | null> {
+  const keysOf = (pages: LegislationPage[]) => new Set(pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean));
+  let all: LegislationPage[] = [];
+  let kept: S[] = [];
+  let reads = 0;
+  // The distinct items of a complete multi-pass list, and those the confirming passes have returned so far.
+  let toConfirm: Set<string> | null = null;
+  let reconfirmed = new Set<string>();
+  while (reads < maxReads) {
+    reads++;
+    const pages: LegislationPage[] = [];
+    const read: S[] = [];
+    for (let offset = 0; ; ) {
+      const res = await readPage(offset);
+      if (!res) {
+        // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
+        if (pages.length === 0 && reads === 1) return null;
+        throw new Error(`${at}: offset ${offset} returned 404 partway through the list`);
+      }
+      read.push(res.source);
+      pages.push(res.page);
+      if (!needsNextPage(res.page)) break;
+      offset += res.page.items.length;
+      if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
+    }
+    const changed =
+      (all.length > 0 && [...all, ...pages].some((p) => p.count !== pages[0].count)) ||
+      (toConfirm !== null && [...keysOf(pages)].some((k) => !toConfirm!.has(k)));
+    if (changed) {
+      all = [];
+      kept = [];
+      toConfirm = null;
+    }
+    all.push(...pages);
+    kept.push(...read);
+    if (toConfirm) {
+      for (const k of keysOf(pages)) reconfirmed.add(k);
+      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true };
+      continue;
+    }
+    const consistent = all.every((p) => p.count === all[0].count);
+    // More distinct items than the count means one was withdrawn and another added between passes; keep only this pass.
+    if (consistent && keysOf(all).size > all[0].count) {
+      all = [...pages];
+      kept = [...read];
+    }
+    if (consistent && keysOf(all).size === all[0].count) {
+      if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true };
+      toConfirm = keysOf(all);
+      reconfirmed = new Set();
+    }
+  }
+  // A complete, confirmed list returns from inside the loop; running out of reads means it never was.
+  return { pages: all, sources: kept, reads, confirmed: false };
+}
+
+/**
+ * The error for a list readWholeList couldn't confirm, or null if it was confirmed. A
+ * complete-but-unconfirmed list passes parseLegislation's count checks, so this error is
+ * what keeps it from being published; callers must add it to their errors.
+ */
+export function unconfirmedError(at: string, list: { pages: LegislationPage[]; reads: number; confirmed: boolean }): string | null {
+  if (list.confirmed) return null;
+  const distinct = new Set(list.pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
+  const count = list.pages[0]?.count ?? 0;
+  return distinct < count
+    ? `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)`
+    : `${at}: complete but not confirmed after ${list.reads} reads`;
+}
+
+/**
+ * What identifies a list item across reads: its API URL, or for one without a URL
+ * (seen on old records) its Congress, type and number. Empty if it has neither.
+ */
+export function itemKey(item: Record<string, unknown>): string {
+  const url = str(item.url).split("?")[0];
+  if (url) return url;
+  const n = str(item.number) || str(item.amendmentNumber);
+  return n ? `${str(item.congress)}/${str(item.type).toLowerCase() || "amendment"}/${n}` : "";
+}
+
 /**
  * Read a member's pages for the current Congress and check them: every item must be
- * a well-formed bill in a Congress no later than the current one, with no repeats,
- * and the whole list must be there: it has to end exactly at the count Congress.gov
- * reports, so a truncated response can't pass as complete. Items from earlier
- * Congresses are skipped wherever they appear, and the links come back sorted newest
- * first by their own date, since the source order is neither.
+ * a well-formed bill in a Congress no later than the current one, and the whole list
+ * must be there: the distinct items must number exactly the count Congress.gov reports,
+ * so a truncated or shifted read can't pass as complete. Congress.gov's order isn't
+ * stable between requests, so offset paging repeats some items and skips others; the
+ * pages may come from several reads of the list, and repeats are merged. Items from
+ * earlier Congresses are skipped wherever they appear, and the links come back sorted
+ * newest first by their own date, since the source order is neither.
  */
 export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date()): ParsedLegislation {
   const at = `${bioguideId} ${kind}`;
@@ -85,12 +189,16 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   let listed = 0;
 
   for (const item of pages.flatMap((p) => p.items)) {
+    // Every item, whatever its Congress, is counted once, so the completeness check below
+    // sees through repeats to any item they pushed out of the read.
+    const key = itemKey(item);
+    if (!key) {
+      errors.push(`${at}: an item has no URL or bill number, so repeats of it can't be told apart`);
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key);
     listed++;
-    // Every item, whatever its Congress, so a repeat at a page boundary (the list changed
-    // while being read by offset) can't hide an item that was pushed past it.
-    const key = str(item.url).split("?")[0];
-    if (key && seen.has(key)) errors.push(`${at}: ${key} is listed twice; the list probably changed while it was being read`);
-    if (key) seen.add(key);
     const c = Number(item.congress);
     const date = str(item.introducedDate);
     if (!Number.isInteger(c) || c < 1 || c > congress) {
@@ -152,7 +260,8 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   if (!pages.length) errors.push(`${at}: no pages fetched`);
   else if (last.next !== null) errors.push(`${at}: stopped before the end of the list`);
   else if (pages.some((p) => p.count !== last.count)) errors.push(`${at}: list changed while it was being read (count went from ${pages[0].count} to ${last.count})`);
-  else if (listed !== last.count) errors.push(`${at}: list ended after ${listed} items but Congress.gov reports ${last.count}; response looks truncated`);
+  else if (listed < last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; some were never returned`);
+  else if (listed > last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; the list changed while it was being read`);
   return { links, amendments, errors };
 }
 

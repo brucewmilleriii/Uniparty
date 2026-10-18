@@ -9,7 +9,7 @@ name: Refresh campaign finance
 # Until it is added, this job skips with a warning instead of failing.
 on:
   schedule:
-    - cron: "43 11 * * *" # daily, after the FEC's overnight processing and an hour after the bills job
+    - cron: "43 11 * * *" # daily, after the FEC's overnight processing; the bills job may still be running, and the two together stay under the key's 5,000 calls an hour
   workflow_dispatch:
   # Pull straight away when a change to the finance ingest lands on main.
   push:
