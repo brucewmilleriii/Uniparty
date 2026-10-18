@@ -8,6 +8,7 @@ import {
   candidateTotalsUrl,
   candidatesTotalsUrl,
   fecCycle,
+  financeFingerprint,
   isCongressionalId,
   memberFinanceStatus,
   parseCandidateTotals,
@@ -270,6 +271,13 @@ describe("validateFinanceSnapshot", () => {
     expect(validateFinanceSnapshot(snap, ["P000197", "S000033"], prev)).toEqual([]);
   });
 
+  it("lets go of a campaign once the roster unlinks its id from a sitting member", () => {
+    const prev = build();
+    const snap = build();
+    snap.members.K000367 = toMemberFinance({ chamber: "senate" }, ["S8MN00999"], [], fetchedAt);
+    expect(validateFinanceSnapshot(snap, ids, prev).join()).not.toMatch(/S6MN00267/);
+  });
+
   it("rejects an API key in a stored URL and a record with no source", () => {
     const leaked = build();
     leaked.sources[0].url += "&api_key=abc";
@@ -277,6 +285,19 @@ describe("validateFinanceSnapshot", () => {
     const unsourced = build();
     unsourced.members.S000033.campaigns[0].sha256 = "";
     expect(validateFinanceSnapshot(unsourced, ids, null).join()).toMatch(/S000033: S4VT00033 has no source hash/);
+  });
+});
+
+describe("financeFingerprint", () => {
+  it("changes when a member's candidate ids change, even if no campaign did", () => {
+    const c = parse("H8CA05035").totals!;
+    const snap = (ids: string[]): FinanceSnapshot => ({
+      provenance: { source: "the FEC", sourceHome: "https://www.fec.gov/data/", fetchedAt, cycle: 2026 },
+      sources: [],
+      members: { P000197: toMemberFinance({ chamber: "house" }, ids, [c], fetchedAt) },
+    });
+    expect(financeFingerprint(snap(["H8CA05035"]))).toBe(financeFingerprint(snap(["H8CA05035"])));
+    expect(financeFingerprint(snap(["H8CA05035", "S8CA00001"]))).not.toBe(financeFingerprint(snap(["H8CA05035"])));
   });
 });
 

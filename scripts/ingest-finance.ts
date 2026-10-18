@@ -24,6 +24,7 @@ import {
   candidateTotalsUrl,
   candidatesTotalsUrl,
   fecCycle,
+  financeFingerprint,
   isCongressionalId,
   parseCandidateTotals,
   readBatch,
@@ -183,11 +184,7 @@ async function main() {
     return;
   }
   // Skip the write when nothing changed, so the scheduled job only commits (and redeploys) on new data.
-  const fingerprint = (s: FinanceSnapshot) =>
-    `${s.provenance.cycle}:${Object.entries(s.members)
-      .map(([id, m]) => `${id}=${m.campaigns.map((c) => c.sha256).join("+")}`)
-      .join()}`;
-  if (prev && fingerprint(prev) === fingerprint(snapshot) && !force) {
+  if (prev && financeFingerprint(prev) === financeFingerprint(snapshot) && !force) {
     console.log(`No changes since ${prev.provenance.fetchedAt}; snapshot left as is.`);
   } else {
     await writeFile(OUT, JSON.stringify(snapshot, null, 1) + "\n");

@@ -264,6 +264,15 @@ export function toMemberFinance(m: Pick<Member, "chamber">, candidateIds: string
   };
 }
 
+/**
+ * What a snapshot says, for deciding whether a run changed anything: each member's
+ * candidate ids (the page relies on them to know what was asked) and campaign hashes.
+ */
+export const financeFingerprint = (s: FinanceSnapshot) =>
+  `${s.provenance.cycle}:${Object.entries(s.members)
+    .map(([id, m]) => `${id}[${m.candidateIds.join(",")}]=${m.campaigns.map((c) => c.sha256).join("+")}`)
+    .join()}`;
+
 export type MemberFinanceStatus = "ok" | "no-ids" | "not-covered";
 
 /**
@@ -349,9 +358,11 @@ export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: s
       if (before && c.coverageEnd < before) errors.push(`${id}: ${c.candidateId} reports now end ${c.coverageEnd}, earlier than ${before} at the last pull`);
     }
   }
-  const current = new Set(membersWithIds);
+  // Only while the member is still current and still linked to the id: an id the roster has
+  // since unlinked is never asked about again, and must not block every later run.
   for (const [candidateId, { member }] of prevEnd)
-    if (current.has(member) && !owner.has(candidateId)) errors.push(`${member}: ${candidateId} had ${cycle - 1}–${cycle} reports at the last pull but none now`);
+    if (snap.members[member]?.candidateIds.includes(candidateId) && !owner.has(candidateId))
+      errors.push(`${member}: ${candidateId} had ${cycle - 1}–${cycle} reports at the last pull but none now`);
   const urls = [...snap.sources.map((s) => s.url), ...Object.values(snap.members).flatMap((m) => m.campaigns.map((c) => c.sourceUrl))];
   if (urls.some((u) => /api_key/i.test(u))) errors.push("An API key is in a stored URL");
   return errors;
