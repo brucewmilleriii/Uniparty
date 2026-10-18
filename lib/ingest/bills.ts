@@ -80,7 +80,8 @@ export const MAX_READS = 12;
  * new. A new item, or one that never comes back, means the list changed while being
  * read (say, one cosponsorship withdrawn and another added, which leaves the count
  * alone); a new item drops the earlier passes and starts over from that one. A pass
- * whose count differs from the earlier ones also replaces them. If the reads run out first, `confirmed` is false and the caller
+ * whose count differs from the earlier ones, or that takes the merged items past the
+ * count, also replaces them. If the reads run out first, `confirmed` is false and the caller
  * must not publish the list. `readPage` returns null on a 404, which on the very
  * first page means the member has no list (null is returned).
  */
@@ -128,7 +129,13 @@ export async function readWholeList<S>(
       if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true };
       continue;
     }
-    if (all.every((p) => p.count === all[0].count) && keysOf(all).size >= all[0].count) {
+    const consistent = all.every((p) => p.count === all[0].count);
+    // More distinct items than the count means one was withdrawn and another added between passes; keep only this pass.
+    if (consistent && keysOf(all).size > all[0].count) {
+      all = [...pages];
+      kept = [...read];
+    }
+    if (consistent && keysOf(all).size === all[0].count) {
       if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true };
       toConfirm = keysOf(all);
       reconfirmed = new Set();

@@ -250,6 +250,18 @@ describe("readWholeList", () => {
     expect(new Set(fixed!.pages.flatMap((pg) => pg.items.map((i) => i.url)))).toEqual(new Set([a, b, y].map((i) => i.url)));
   });
 
+  it("starts over when merged reads hold more items than the count", async () => {
+    const [a, b, x, y] = [item(1), item(2), item(3), item(4)];
+    // X is withdrawn and Y added between reads 1 and 2 (count stays 3), so the merge holds four items.
+    const passes = [[a, x, a], [b, y, b], [a, b, y], [y, a, b]];
+    let n = 0;
+    const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, passes.length - 1)], 250).readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(4);
+    expect(parse(list!.pages).errors).toEqual([]);
+    expect(new Set(list!.pages.flatMap((pg) => pg.items.map((i) => i.url)))).toEqual(new Set([a, b, y].map((i) => i.url)));
+  });
+
   it("reports an unconfirmed list when the reads run out", async () => {
     const [a, b, x] = [item(1), item(2), item(3)];
     const passes = [[a, x, a], [b, a, b]];
