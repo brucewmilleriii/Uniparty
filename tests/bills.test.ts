@@ -197,6 +197,7 @@ describe("readWholeList", () => {
   it("reads a reshuffling list again until every item has come back", async () => {
     const list = await readWholeList("T000001 sponsored", server(shuffler(7)).readPage, 20);
     expect(list!.reads).toBeGreaterThan(1);
+    expect(list!.confirmed).toBe(true);
     expect(list!.sources.length).toBe(list!.reads * 3);
     expect(parse(list!.pages).errors).toEqual([]);
   });
@@ -206,7 +207,9 @@ describe("readWholeList", () => {
     // Item 30 is withdrawn after the first request, so the first read's count disagrees with itself.
     const s = server(() => (n++ < 1 ? items : items.slice(0, 29)));
     const list = await readWholeList("T000001 sponsored", s.readPage);
-    expect(list!.reads).toBe(2);
+    // Read 2 is complete on its own but follows a dropped read, so read 3 confirms it.
+    expect(list!.reads).toBe(3);
+    expect(list!.confirmed).toBe(true);
     expect(list!.pages.every((p) => p.count === 29)).toBe(true);
     expect(parse(list!.pages).errors).toEqual([]);
 
@@ -214,6 +217,29 @@ describe("readWholeList", () => {
     const short = await readWholeList("T000001 sponsored", stuck.readPage, 4);
     expect(short!.reads).toBe(4);
     expect(parse(short!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
+  });
+
+  it("starts over when a confirming read turns up an item the others never returned", async () => {
+    const [a, b, x, y] = [item(1), item(2), item(3), item(4)];
+    // Read 1 misses B; then X is withdrawn and Y added (count stays 3); read 2 misses Y.
+    const passes = [[a, x, a], [b, a, b], [a, b, y], [y, b, a]];
+    let n = 0;
+    const s = server(() => passes[Math.min(n++, passes.length - 1)], 250);
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(4);
+    const p = parse(list!.pages);
+    expect(p.errors).toEqual([]);
+    const keys = new Set(list!.pages.flatMap((pg) => pg.items.map((i) => i.url)));
+    expect([...keys].sort()).toEqual([a, b, y].map((i) => i.url).sort());
+  });
+
+  it("reports an unconfirmed list when the reads run out", async () => {
+    const [a, b, x] = [item(1), item(2), item(3)];
+    const passes = [[a, x, a], [b, a, b]];
+    let n = 0;
+    const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, 1)], 250).readPage, 2);
+    expect(list!.confirmed).toBe(false);
   });
 
   it("returns null for a member with no list, but throws on a 404 partway through", async () => {

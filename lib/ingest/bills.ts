@@ -75,18 +75,26 @@ export const MAX_READS = 6;
  * Read one member list, all pages. Congress.gov's order shifts between requests, so a
  * single pass by offset repeats some items and misses others; the list is read again
  * until the distinct items reach the reported count, and every pass is returned for
- * parseLegislation to merge and check. A pass whose count differs from the earlier
- * ones (the list really changed) replaces them. `readPage` returns null on a 404,
- * which on the very first page means the member has no list (null is returned).
+ * parseLegislation to merge and check. A list assembled from several passes is read
+ * once more to confirm it: if that pass turns up an item the others never returned,
+ * the list changed while being read (say, one cosponsorship withdrawn and another
+ * added, which leaves the count alone), so the earlier passes are dropped and the
+ * read starts over from it. A pass whose count differs from the earlier ones also
+ * replaces them. If the reads run out first, `confirmed` is false and the caller
+ * must not publish the list. `readPage` returns null on a 404, which on the very
+ * first page means the member has no list (null is returned).
  */
 export async function readWholeList<S>(
   at: string,
   readPage: (offset: number) => Promise<{ page: LegislationPage; source: S } | null>,
   maxReads = MAX_READS,
-): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number } | null> {
+): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean } | null> {
+  const keysOf = (pages: LegislationPage[]) => new Set(pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean));
   let all: LegislationPage[] = [];
   let kept: S[] = [];
   let reads = 0;
+  // The distinct items of a complete multi-pass list, waiting for a pass to confirm them.
+  let toConfirm: Set<string> | null = null;
   while (reads < maxReads) {
     reads++;
     const pages: LegislationPage[] = [];
@@ -104,16 +112,24 @@ export async function readWholeList<S>(
       offset += res.page.items.length;
       if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
     }
-    if (all.length && (all[0].count !== pages[0].count || !pages.every((p) => p.count === pages[0].count))) {
+    const changed =
+      (all.length > 0 && (all[0].count !== pages[0].count || !pages.every((p) => p.count === pages[0].count))) ||
+      (toConfirm !== null && [...keysOf(pages)].some((k) => !toConfirm!.has(k)));
+    if (changed) {
       all = [];
       kept = [];
+    } else if (toConfirm) {
+      return { pages: [...all, ...pages], sources: [...kept, ...read], reads, confirmed: true };
     }
+    toConfirm = null;
     all.push(...pages);
     kept.push(...read);
-    const distinct = new Set(all.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
-    if (all.every((p) => p.count === all[0].count) && distinct >= all[0].count) break;
+    if (all.every((p) => p.count === all[0].count) && keysOf(all).size >= all[0].count) {
+      if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true };
+      toConfirm = keysOf(all);
+    }
   }
-  return { pages: all, sources: kept, reads };
+  return { pages: all, sources: kept, reads, confirmed: toConfirm === null };
 }
 
 /**
