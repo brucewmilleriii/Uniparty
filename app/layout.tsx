@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import Logo from "@/components/Logo";
 import RosterRail, { type RailMember } from "@/components/RosterRail";
 import { getRoster } from "@/lib/data";
@@ -94,6 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </p>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
