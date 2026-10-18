@@ -87,6 +87,11 @@ const publicUrl = (url: string) => url.replace(base, API_BASE);
 let latest = Infinity;
 let nextSlot = 0;
 let calls = 0;
+// The job's timeout is 360 minutes. New members stop at 330; a rate-limit wait that would run past 350 fails the run
+// with a message, rather than letting the job be killed with no explanation.
+const started = Date.now();
+const MEMBER_DEADLINE = started + 330 * 60_000;
+const HARD_DEADLINE = started + 350 * 60_000;
 
 /** Space requests evenly at HOURLY_BUDGET an hour, and back off when the key is nearly spent. */
 async function pace() {
@@ -98,6 +103,7 @@ async function pace() {
     nextSlot = Math.max(nextSlot, now + 300_000);
   }
   const at = Math.max(now, nextSlot);
+  if (at > HARD_DEADLINE) throw new Error(`Out of time waiting on the API's rate limit after ${calls} calls (${extraReads} extra reads)`);
   nextSlot = at + 3_600_000 / HOURLY_BUDGET;
   if (at > now) await sleep(at - now);
 }
@@ -193,12 +199,10 @@ async function main() {
   const members: Record<string, MemberBills> = {};
   const samples: { kind: LegislationKind; id: string; link: ParsedLink }[] = [];
   let done = 0;
-  // Stop reading before the job's 360-minute timeout kills it, so a slow run still ends with the error summary.
-  const deadline = Date.now() + 330 * 60_000;
   let outOfTime = false;
 
   await pool(ids, async (id) => {
-    if (Date.now() > deadline) {
+    if (Date.now() > MEMBER_DEADLINE) {
       if (!outOfTime) errors.push(`ran out of time after ${done} of ${ids.length} members (${extraReads} extra reads so far)`);
       outOfTime = true;
       return;
