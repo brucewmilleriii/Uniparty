@@ -166,7 +166,11 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
     for (let offset = 0; ; ) {
       const url = memberLegislationUrl(id, kind, offset, base);
       const res = await get(url);
-      if (!res) return null;
+      if (!res) {
+        // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
+        if (pages.length === 0) return null;
+        throw new Error(`${id} ${kind}: ${publicUrl(url)} returned 404 partway through the list`);
+      }
       const page = readLegislationPage(res.body, kind);
       read.push({ url: publicUrl(url), sha256: sha(res.text) });
       pages.push(page);
