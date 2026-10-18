@@ -69,18 +69,18 @@ export interface ParsedLegislation {
 }
 
 /** Most full reads of one list before giving up on collecting every item. */
-export const MAX_READS = 6;
+export const MAX_READS = 12;
 
 /**
  * Read one member list, all pages. Congress.gov's order shifts between requests, so a
  * single pass by offset repeats some items and misses others; the list is read again
  * until the distinct items reach the reported count, and every pass is returned for
- * parseLegislation to merge and check. A list assembled from several passes is read
- * once more to confirm it: if that pass turns up an item the others never returned,
- * the list changed while being read (say, one cosponsorship withdrawn and another
- * added, which leaves the count alone), so the earlier passes are dropped and the
- * read starts over from it. A pass whose count differs from the earlier ones also
- * replaces them. If the reads run out first, `confirmed` is false and the caller
+ * parseLegislation to merge and check. A list assembled from several passes is then
+ * confirmed by further passes: together they must return every item again and nothing
+ * new. A new item, or one that never comes back, means the list changed while being
+ * read (say, one cosponsorship withdrawn and another added, which leaves the count
+ * alone); a new item drops the earlier passes and starts over from that one. A pass
+ * whose count differs from the earlier ones also replaces them. If the reads run out first, `confirmed` is false and the caller
  * must not publish the list. `readPage` returns null on a 404, which on the very
  * first page means the member has no list (null is returned).
  */
@@ -93,8 +93,9 @@ export async function readWholeList<S>(
   let all: LegislationPage[] = [];
   let kept: S[] = [];
   let reads = 0;
-  // The distinct items of a complete multi-pass list, waiting for a pass to confirm them.
+  // The distinct items of a complete multi-pass list, and those the confirming passes have returned so far.
   let toConfirm: Set<string> | null = null;
+  let reconfirmed = new Set<string>();
   while (reads < maxReads) {
     reads++;
     const pages: LegislationPage[] = [];
@@ -118,18 +119,23 @@ export async function readWholeList<S>(
     if (changed) {
       all = [];
       kept = [];
-    } else if (toConfirm) {
-      return { pages: [...all, ...pages], sources: [...kept, ...read], reads, confirmed: true };
+      toConfirm = null;
     }
-    toConfirm = null;
     all.push(...pages);
     kept.push(...read);
+    if (toConfirm) {
+      for (const k of keysOf(pages)) reconfirmed.add(k);
+      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true };
+      continue;
+    }
     if (all.every((p) => p.count === all[0].count) && keysOf(all).size >= all[0].count) {
       if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true };
       toConfirm = keysOf(all);
+      reconfirmed = new Set();
     }
   }
-  return { pages: all, sources: kept, reads, confirmed: toConfirm === null };
+  // A complete, confirmed list returns from inside the loop; running out of reads means it never was.
+  return { pages: all, sources: kept, reads, confirmed: false };
 }
 
 /**

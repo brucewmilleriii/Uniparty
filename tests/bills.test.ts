@@ -216,6 +216,7 @@ describe("readWholeList", () => {
     const stuck = server(() => [...items.slice(0, 29), item(1)]);
     const short = await readWholeList("T000001 sponsored", stuck.readPage, 4);
     expect(short!.reads).toBe(4);
+    expect(short!.confirmed).toBe(false);
     expect(parse(short!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
   });
 
@@ -232,6 +233,21 @@ describe("readWholeList", () => {
     expect(p.errors).toEqual([]);
     const keys = new Set(list!.pages.flatMap((pg) => pg.items.map((i) => i.url)));
     expect([...keys].sort()).toEqual([a, b, y].map((i) => i.url).sort());
+  });
+
+  it("doesn't confirm a list until every item has come back again", async () => {
+    const [a, b, x, y] = [item(1), item(2), item(3), item(4)];
+    // X is withdrawn and Y added after read 1; the confirming read misses Y too, but X never returns.
+    const passes = [[a, x, a], [b, a, b], [a, b, a], [b, b, a]];
+    let n = 0;
+    const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, passes.length - 1)], 250).readPage);
+    expect(list!.confirmed).toBe(false);
+    // A later read that returns Y starts over and settles on the real list.
+    const later = [...passes.slice(0, 3), [y, a, b], [a, y, b]];
+    let m = 0;
+    const fixed = await readWholeList("T000001 sponsored", server(() => later[Math.min(m++, later.length - 1)], 250).readPage);
+    expect(fixed!.confirmed).toBe(true);
+    expect(new Set(fixed!.pages.flatMap((pg) => pg.items.map((i) => i.url)))).toEqual(new Set([a, b, y].map((i) => i.url)));
   });
 
   it("reports an unconfirmed list when the reads run out", async () => {

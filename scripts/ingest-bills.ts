@@ -169,7 +169,7 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
   });
   if (!list) return null;
   reReads += list.reads - 1;
-  if (!list.confirmed) errors.push(`${id} ${kind}: the list kept changing while it was being read; not confirmed after ${list.reads} reads`);
+  if (!list.confirmed) errors.push(`${id} ${kind}: couldn't read the same complete list twice in ${list.reads} reads`);
   sources.push(...list.sources);
   return list.pages;
 }
