@@ -1,0 +1,190 @@
+{
+    "pagination": {
+        "count": 73,
+        "next": "https://api.congress.gov/v3/member/A000372/sponsored-legislation?offset=12&limit=12&format=json"
+    },
+    "request": {
+        "bioguideId": "a000372",
+        "contentType": "application/json",
+        "format": "json"
+    },
+    "sponsoredLegislation": [
+        {
+            "congress": 119,
+            "introducedDate": "2025-06-27",
+            "latestAction": {
+                "actionDate": "2026-04-28",
+                "text": "Placed on the Union Calendar, Calendar No. 543."
+            },
+            "number": "4214",
+            "policyArea": {
+                "name": "Environmental Protection"
+            },
+            "title": "Clean Air and Building Infrastructure Improvement Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/4214?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-10",
+            "latestAction": {
+                "actionDate": "2026-09-10",
+                "text": "Referred to the House Committee on Energy and Commerce."
+            },
+            "number": "1521",
+            "policyArea": {
+                "name": "Health"
+            },
+            "title": "Honoring the 100th anniversary of the American Cleaning Institute and recognizing the contributions of the cleaning products industry to the health, safety, and economic vitality of the United States.",
+            "type": "HRES",
+            "url": "https://api.congress.gov/v3/bill/119/hres/1521?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-07-21",
+            "latestAction": {
+                "actionDate": "2026-07-21",
+                "text": "Referred to the Committee on Education and Workforce, and in addition to the Committee on Energy and Commerce, for a period to be subsequently determined by the Speaker, in each case for consideration of such provisions as fall within the jurisdiction of the committee concerned."
+            },
+            "number": "9798",
+            "policyArea": {
+                "name": "Health"
+            },
+            "title": "Employer Health Plan Flexibility Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/9798?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2025-07-23",
+            "latestAction": {
+                "actionDate": "2026-02-25",
+                "text": "Received in the Senate and Read twice and referred to the Committee on Energy and Natural Resources."
+            },
+            "number": "4626",
+            "policyArea": {
+                "name": "Energy"
+            },
+            "title": "Home Appliance Protection and Affordability Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/4626?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-03-12",
+            "latestAction": {
+                "actionDate": "2026-07-02",
+                "text": "Placed on the Union Calendar, Calendar No. 634."
+            },
+            "number": "7895",
+            "policyArea": {
+                "name": "Health"
+            },
+            "title": "PBM Kickback Prohibition Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/7895?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-01-22",
+            "latestAction": {
+                "actionDate": "2026-05-20",
+                "text": "Referred to the Subcommittee on Forestry and Horticulture."
+            },
+            "number": "7195",
+            "policyArea": {
+                "name": "Agriculture and Food"
+            },
+            "title": "Timber Harvesters, Haulers, and Landowners Market Disruptions Relief Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/7195?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2025-11-19",
+            "latestAction": {
+                "actionDate": "2025-11-19",
+                "text": "Referred to the House Committee on the Judiciary."
+            },
+            "number": "6122",
+            "policyArea": {
+                "name": "Immigration"
+            },
+            "title": "BARN Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/6122?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2025-09-19",
+            "latestAction": {
+                "actionDate": "2025-09-19",
+                "text": "Referred to the House Committee on Education and Workforce."
+            },
+            "number": "5509",
+            "policyArea": {
+                "name": "Health"
+            },
+            "title": "Safe Step Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/5509?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2025-09-08",
+            "latestAction": {
+                "actionDate": "2026-01-14",
+                "text": "Placed on the Union Calendar, Calendar No. 383."
+            },
+            "number": "5169",
+            "policyArea": {
+                "name": "Labor and Employment"
+            },
+            "title": "Retire through Ownership Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/5169?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2025-06-26",
+            "latestAction": {
+                "actionDate": "2025-06-26",
+                "text": "Referred to the Committee on Education and Workforce, and in addition to the Committee on the Judiciary, for a period to be subsequently determined by the Speaker, in each case for consideration of such provisions as fall within the jurisdiction of the committee concerned."
+            },
+            "number": "4154",
+            "policyArea": {
+                "name": "Labor and Employment"
+            },
+            "title": "Employee Rights Act",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/4154?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2025-06-25",
+            "latestAction": {
+                "actionDate": "2026-06-25",
+                "text": "Ordered to be Reported (Amended) by the Yeas and Nays: 32 - 0."
+            },
+            "number": "4122",
+            "policyArea": {
+                "name": "Labor and Employment"
+            },
+            "title": "Health Care for Energy Workers Act of 2025",
+            "type": "HR",
+            "url": "https://api.congress.gov/v3/bill/119/hr/4122?format=json"
+        },
+        {
+            "amendmentNumber": "757",
+            "congress": 118,
+            "introducedDate": "2023-11-14",
+            "latestAction": {
+                "actionDate": "2023-11-14",
+                "actionTime": "18:27:11",
+                "text": "On agreeing to the Allen amendment (A033) Agreed to by voice vote."
+            },
+            "type": null,
+            "url": "https://api.congress.gov/v3/amendment/118/hamdt/757?format=json"
+        }
+    ]
+}

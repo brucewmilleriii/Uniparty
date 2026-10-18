@@ -190,7 +190,15 @@ async function main() {
 
   if (errors.length) {
     console.error(`Bills failed validation (${errors.length} problems); keeping the previous snapshot.`);
-    for (const e of errors.slice(0, 50)) console.error(`  - ${e}`);
+    // Group by kind of problem (ids, numbers and dates stripped) so one systematic cause stands out.
+    const kinds = new Map<string, number>();
+    for (const e of errors) {
+      const k = e.replace(/^\S+ (sponsored|cosponsored)?:?/, "").replace(/\d[\d-]*/g, "#").trim();
+      kinds.set(k, (kinds.get(k) ?? 0) + 1);
+    }
+    for (const [k, n] of [...kinds].sort((a, b) => b[1] - a[1]).slice(0, 10)) console.error(`  ${n}× ${k}`);
+    console.error("First problems:");
+    for (const e of errors.slice(0, 30)) console.error(`  - ${e}`);
     process.exit(1);
   }
 

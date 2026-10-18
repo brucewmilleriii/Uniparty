@@ -49,7 +49,7 @@ export function readLegislationPage(body: unknown, kind: LegislationKind): Legis
   return { items: (body[key] as unknown[]).filter(isObj), count, next: str(body.pagination.next) || null };
 }
 
-/** Whether to fetch another page: lists run newest first, so stop once a page reaches an earlier Congress. */
+/** Whether to fetch another page: lists are grouped by Congress, newest first, so stop once a page reaches an earlier Congress. */
 export const needsNextPage = (page: LegislationPage, congress: number) =>
   page.next !== null && page.items.length > 0 && page.items.every((i) => Number(i.congress) >= congress);
 
@@ -59,7 +59,7 @@ export interface ParsedLink {
 }
 
 export interface ParsedLegislation {
-  /** Bills and resolutions in the current Congress, newest first, as listed. */
+  /** Bills and resolutions in the current Congress, newest first by date. */
   links: ParsedLink[];
   amendments: number;
   errors: string[];
@@ -67,9 +67,13 @@ export interface ParsedLegislation {
 
 /**
  * Read a member's pages for the current Congress and check them: every item must be
- * a well-formed bill in a Congress no later than the current one, listed newest first
- * with no repeats, and the list must either reach an earlier Congress or end exactly
- * at the count Congress.gov reports (so a truncated response can't pass as complete).
+ * a well-formed bill in a Congress no later than the current one, with no repeats.
+ * Congress.gov groups the list by Congress, newest Congress first, but within a
+ * Congress the order is not by date, so the Congress order is what's checked (paging
+ * stops at the first earlier Congress, and a current-Congress item after it would be
+ * missed). The list must either reach an earlier Congress or end exactly at the count
+ * Congress.gov reports, so a truncated response can't pass as complete. The links
+ * come back sorted newest first by their own date.
  */
 export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date()): ParsedLegislation {
   const at = `${bioguideId} ${kind}`;
@@ -78,7 +82,7 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   const seen = new Set<string>();
   let amendments = 0;
   let listed = 0;
-  let previousDate = "9999-12-31";
+  let previousCongress = congress;
   let reachedEarlier = false;
 
   for (const item of pages.flatMap((p) => p.items)) {
@@ -93,11 +97,12 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
       errors.push(`${at}: item ${listed} has an unreadable date "${date}"`);
       continue;
     }
-    if (date > previousDate) errors.push(`${at}: list is out of date order at item ${listed} (${date} after ${previousDate})`);
-    previousDate = date;
+    if (c > previousCongress) errors.push(`${at}: item ${listed} is from the ${c}th Congress but follows the ${previousCongress}th; list is out of Congress order`);
+    previousCongress = Math.min(previousCongress, c);
     if (c < congress) {
+      // Keep reading the rest of what was fetched, so a current-Congress item listed after an older one is caught.
       reachedEarlier = true;
-      break;
+      continue;
     }
     if (Date.parse(date) > today.getTime() + 86_400_000) errors.push(`${at}: item ${listed} is dated in the future (${date})`);
     if (item.amendmentNumber !== undefined) {
@@ -141,6 +146,9 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
       },
     });
   }
+
+  // Newest first by date; ties keep the source order.
+  links.sort((a, b) => b.date.localeCompare(a.date));
 
   const last = pages[pages.length - 1];
   if (!pages.length) errors.push(`${at}: no pages fetched`);
