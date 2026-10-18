@@ -134,16 +134,14 @@ async function get(url: string): Promise<{ body: unknown; text: string } | null>
       continue;
     }
     if (!res.ok) throw new Error(`${publicUrl(url)} returned HTTP ${res.status}`);
-    let text: string;
+    // A cut-off body or a 200 carrying a maintenance page counts as a network error.
     try {
-      text = await res.text();
+      const text = await res.text();
+      return { body: JSON.parse(text), text };
     } catch (err) {
-      // The body was cut off mid-read.
-      if (++networkErrors >= 3) throw err;
+      if (++networkErrors >= 3) throw new Error(`${publicUrl(url)} didn't return a readable JSON body after ${networkErrors} tries: ${err instanceof Error ? err.message : err}`);
       await sleep(2000 * networkErrors);
-      continue;
     }
-    return { body: JSON.parse(text), text };
   }
 }
 
