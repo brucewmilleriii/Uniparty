@@ -49,9 +49,12 @@ export function readLegislationPage(body: unknown, kind: LegislationKind): Legis
   return { items: (body[key] as unknown[]).filter(isObj), count, next: str(body.pagination.next) || null };
 }
 
-/** Whether to fetch another page: lists run newest first, so stop once a page reaches an earlier Congress. */
-export const needsNextPage = (page: LegislationPage, congress: number) =>
-  page.next !== null && page.items.length > 0 && page.items.every((i) => Number(i.congress) >= congress);
+/**
+ * Whether to fetch another page. Congress.gov orders these lists neither by date nor
+ * by Congress (a current bill can follow one from years ago), so the only way to be
+ * sure of every current-Congress item is to read the whole list.
+ */
+export const needsNextPage = (page: LegislationPage) => page.next !== null && page.items.length > 0;
 
 export interface ParsedLink {
   bill: Omit<Bill, "fetchedAt">;
@@ -59,7 +62,7 @@ export interface ParsedLink {
 }
 
 export interface ParsedLegislation {
-  /** Bills and resolutions in the current Congress, newest first, as listed. */
+  /** Bills and resolutions in the current Congress, newest first by date. */
   links: ParsedLink[];
   amendments: number;
   errors: string[];
@@ -67,9 +70,11 @@ export interface ParsedLegislation {
 
 /**
  * Read a member's pages for the current Congress and check them: every item must be
- * a well-formed bill in a Congress no later than the current one, listed newest first
- * with no repeats, and the list must either reach an earlier Congress or end exactly
- * at the count Congress.gov reports (so a truncated response can't pass as complete).
+ * a well-formed bill in a Congress no later than the current one, with no repeats,
+ * and the whole list must be there: it has to end exactly at the count Congress.gov
+ * reports, so a truncated response can't pass as complete. Items from earlier
+ * Congresses are skipped wherever they appear, and the links come back sorted newest
+ * first by their own date, since the source order is neither.
  */
 export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date()): ParsedLegislation {
   const at = `${bioguideId} ${kind}`;
@@ -78,26 +83,25 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   const seen = new Set<string>();
   let amendments = 0;
   let listed = 0;
-  let previousDate = "9999-12-31";
-  let reachedEarlier = false;
 
   for (const item of pages.flatMap((p) => p.items)) {
     listed++;
+    // Every item, whatever its Congress, so a repeat at a page boundary (the list changed
+    // while being read by offset) can't hide an item that was pushed past it.
+    const key = str(item.url).split("?")[0];
+    if (key && seen.has(key)) errors.push(`${at}: ${key} is listed twice; the list probably changed while it was being read`);
+    if (key) seen.add(key);
     const c = Number(item.congress);
     const date = str(item.introducedDate);
     if (!Number.isInteger(c) || c < 1 || c > congress) {
       errors.push(`${at}: item ${listed} is in an impossible Congress (${String(item.congress)})`);
       continue;
     }
+    // Older items aren't kept, so a malformed one decades back mustn't sink the run.
+    if (c < congress) continue;
     if (!isDate(date)) {
       errors.push(`${at}: item ${listed} has an unreadable date "${date}"`);
       continue;
-    }
-    if (date > previousDate) errors.push(`${at}: list is out of date order at item ${listed} (${date} after ${previousDate})`);
-    previousDate = date;
-    if (c < congress) {
-      reachedEarlier = true;
-      break;
     }
     if (Date.parse(date) > today.getTime() + 86_400_000) errors.push(`${at}: item ${listed} is dated in the future (${date})`);
     if (item.amendmentNumber !== undefined) {
@@ -117,8 +121,6 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
     if (str(item.url).split("?")[0] !== apiUrl) errors.push(`${at}: ${measure} points at ${str(item.url)}, expected ${apiUrl}`);
     const title = str(item.title) || str(item.latestTitle);
     if (!title) errors.push(`${at}: ${measure} has no title`);
-    if (seen.has(id)) errors.push(`${at}: ${measure} is listed twice`);
-    seen.add(id);
 
     const la = isObj(item.latestAction) ? item.latestAction : null;
     const laDate = la ? str(la.actionDate) : "";
@@ -142,11 +144,15 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
     });
   }
 
+  // Newest first by date. The source order isn't stable, so break ties by bill
+  // (higher number first, then type) to keep the same window from run to run.
+  links.sort((a, b) => b.date.localeCompare(a.date) || b.bill.number - a.bill.number || a.bill.type.localeCompare(b.bill.type));
+
   const last = pages[pages.length - 1];
   if (!pages.length) errors.push(`${at}: no pages fetched`);
-  else if (!reachedEarlier && last.next === null && listed !== last.count)
-    errors.push(`${at}: list ended after ${listed} items but Congress.gov reports ${last.count}; response looks truncated`);
-  else if (!reachedEarlier && last.next !== null) errors.push(`${at}: stopped before reaching an earlier Congress or the end of the list`);
+  else if (last.next !== null) errors.push(`${at}: stopped before the end of the list`);
+  else if (pages.some((p) => p.count !== last.count)) errors.push(`${at}: list changed while it was being read (count went from ${pages[0].count} to ${last.count})`);
+  else if (listed !== last.count) errors.push(`${at}: list ended after ${listed} items but Congress.gov reports ${last.count}; response looks truncated`);
   return { links, amendments, errors };
 }
 

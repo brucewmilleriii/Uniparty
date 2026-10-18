@@ -23,6 +23,8 @@ const today = new Date("2026-10-18");
 const klobSponsored = readLegislationPage(fixture("K000367-sponsored.json"), "sponsored");
 const klobCosponsored = readLegislationPage(fixture("K000367-cosponsored.json"), "cosponsored");
 const pelosiSponsored = readLegislationPage(fixture("P000197-sponsored.json"), "sponsored");
+// Real page that is not in date order within the 119th Congress and ends with a 118th-Congress amendment.
+const allenSponsored = readLegislationPage(fixture("A000372-sponsored.json"), "sponsored");
 
 /** The same page as if it were the last one, with the count matching what it lists. */
 const asLastPage = (p: LegislationPage): LegislationPage => ({ ...p, next: null, count: p.items.length });
@@ -41,12 +43,10 @@ describe("readLegislationPage", () => {
 });
 
 describe("needsNextPage", () => {
-  it("keeps paging while every item is in the current Congress", () => {
-    expect(needsNextPage(klobSponsored, 119)).toBe(true);
-  });
-
-  it("stops once a page reaches an earlier Congress", () => {
-    expect(needsNextPage(pelosiSponsored, 119)).toBe(false);
+  it("reads to the end of the list, even past items from earlier Congresses", () => {
+    expect(needsNextPage(klobSponsored)).toBe(true);
+    expect(needsNextPage(pelosiSponsored)).toBe(true);
+    expect(needsNextPage(asLastPage(klobSponsored))).toBe(false);
   });
 });
 
@@ -79,10 +79,32 @@ describe("parseLegislation", () => {
     const s3466 = co.links.find((l) => l.bill.id === "119-s-3466")!;
     expect(s3466.date).toBe("2026-09-29");
     expect(s3466.bill.latestAction?.date).toBe("2025-12-11");
+    // Seven bills share 2026-09-30; ties are ordered by number, so the window is stable.
+    expect(co.links.slice(0, 7).map((l) => l.bill.label)).toEqual(["S. 5665", "S. 5656", "S. 5614", "S.Res. 946", "S.Res. 945", "S.Res. 931", "S.J.Res. 220"]);
+  });
+
+  it("accepts a list that isn't in date order, and sorts it newest first", () => {
+    const p = parseLegislation([asLastPage(allenSponsored)], "sponsored", "A000372", 119, today);
+    expect(p.errors).toEqual([]);
+    expect(p.links).toHaveLength(11);
+    expect(p.amendments).toBe(0);
+    expect(p.links.map((l) => l.date).slice(0, 3)).toEqual(["2026-09-10", "2026-07-21", "2026-03-12"]);
+    expect(p.links[0].bill.label).toBe("H.Res. 1521");
+    expect(p.links.at(-1)!.bill.label).toBe("H.R. 4122");
+  });
+
+  it("keeps current-Congress items listed after an earlier Congress's", () => {
+    // Live lists do this: a 118th-Congress amendment, then more 119th-Congress bills.
+    const items = [...allenSponsored.items];
+    const first = items.splice(0, 1);
+    const p = parseLegislation([asLastPage({ ...allenSponsored, items: [...items, ...first] })], "sponsored", "A000372", 119, today);
+    expect(p.errors).toEqual([]);
+    expect(p.links.map((l) => l.bill.label)).toContain("H.R. 4214");
+    expect(p.links).toHaveLength(11);
   });
 
   it("returns nothing for a member with no bills in the current Congress", () => {
-    const p = parseLegislation([pelosiSponsored], "sponsored", "P000197", 119, today);
+    const p = parseLegislation([asLastPage(pelosiSponsored)], "sponsored", "P000197", 119, today);
     expect(p.errors).toEqual([]);
     expect(p.links).toEqual([]);
   });
@@ -94,14 +116,30 @@ describe("parseLegislation", () => {
 
   it("rejects a list that stopped paging too early", () => {
     const p = parseLegislation([klobSponsored], "sponsored", "K000367", 119, today);
-    expect(p.errors.join()).toMatch(/stopped before reaching/);
+    expect(p.errors.join()).toMatch(/stopped before the end of the list/);
   });
 
-  it("rejects repeats, items out of date order, future dates and unrecognisable bills", () => {
+  it("rejects repeats, future dates and unrecognisable bills", () => {
     const [a, b] = klobSponsored.items;
     const page = (items: Record<string, unknown>[]) => [{ items, count: items.length, next: null }];
     expect(parseLegislation(page([a, a]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/listed twice/);
-    expect(parseLegislation(page([b, a]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/out of date order/);
+    // A repeat of an earlier-Congress item across a page boundary means the list shifted and an item may be missing.
+    const old = pelosiSponsored.items[0];
+    const pages = [
+      { items: [a, old], count: 3, next: "page 2" },
+      { items: [old], count: 3, next: null },
+    ];
+    expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/hres\/742 is listed twice/);
+    // An item removed mid-read shifts the next one past the offset; the count changing between pages gives it away.
+    const shrunk = [
+      { items: [a, old], count: 4, next: "page 2" },
+      { items: [b], count: 3, next: null },
+    ];
+    expect(parseLegislation(shrunk, "sponsored", "K000367", 119, today).errors.join()).toMatch(/changed while it was being read \(count went from 4 to 3\)/);
+    // A malformed item from an earlier Congress isn't kept, so it isn't an error.
+    const broken = { ...old, url: undefined, introducedDate: null };
+    expect(parseLegislation(page([a, broken]), "sponsored", "K000367", 119, today).errors).toEqual([]);
+    expect(parseLegislation(page([b, a]), "sponsored", "K000367", 119, today).errors).toEqual([]);
     expect(parseLegislation(page([{ ...a, introducedDate: "2027-01-01" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/future/);
     expect(parseLegislation(page([{ ...a, type: "XYZ" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/not a recognisable bill/);
     expect(parseLegislation(page([{ ...a, congress: 120 }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/impossible Congress/);
