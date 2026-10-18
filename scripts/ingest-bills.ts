@@ -5,7 +5,9 @@
  * sponsor and cosponsors match. When SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
  * are set it also upserts into Supabase.
  *
- * Needs DATA_GOV_API_KEY (free at https://api.data.gov/signup/).
+ * Needs DATA_GOV_API_KEY (free at https://api.data.gov/signup/). Congress.gov's
+ * member lists aren't ordered by date or Congress, so every page of every list is
+ * read; requests are paced under the key's hourly limit, so a full run takes a while.
  *
  *   npm run ingest:bills                         # fetch from the source
  *   npm run ingest:bills -- --check              # fetch and validate only; write nothing
@@ -57,6 +59,13 @@ const { congress } = congressForYear(new Date().getUTCFullYear());
 /** Bills re-checked against their own record each run, per kind. */
 const SAMPLE = 12;
 const CONCURRENCY = 4;
+/**
+ * Calls per hour this job allows itself. api.data.gov allows 5,000 an hour per key,
+ * and the same key serves the FEC ingest, so this leaves room for it.
+ */
+const HOURLY_BUDGET = 3600;
+/** Wait for the key's hourly allowance to recover when fewer calls than this are left. */
+const RESERVE = 400;
 
 if (memberLimit !== Infinity && !check) {
   console.error("--members only works with --check; a partial snapshot would drop everyone else.");
@@ -74,16 +83,32 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 /** The URL as stored: no key, no base override. */
 const publicUrl = (url: string) => url.replace(base, API_BASE);
 
-let remaining = Infinity;
+let latest = Infinity;
+let nextSlot = 0;
+let calls = 0;
+
+/** Space requests evenly at HOURLY_BUDGET an hour, and back off when the key is nearly spent. */
+async function pace() {
+  if (latest < RESERVE) {
+    console.log(`Only ${latest} API calls left on the key this hour; waiting 5 minutes.`);
+    latest = Infinity;
+    await sleep(300_000);
+  }
+  const now = Date.now();
+  const at = Math.max(now, nextSlot);
+  nextSlot = at + 3_600_000 / HOURLY_BUDGET;
+  if (at > now) await sleep(at - now);
+}
 
 /** GET JSON with retries on rate limiting and server errors; returns null on 404. */
 async function get(url: string): Promise<{ body: unknown; text: string } | null> {
   for (let attempt = 1; ; attempt++) {
-    await sleep(100);
+    await pace();
+    calls++;
     try {
       const res = await fetch(url, { headers: { "X-Api-Key": key!, Accept: "application/json", "User-Agent": "uniparty-ingest (+https://github.com/brucewmilleriii/uniparty)" } });
       const left = Number(res.headers.get("x-ratelimit-remaining"));
-      if (Number.isFinite(left)) remaining = Math.min(remaining, left);
+      if (Number.isFinite(left)) latest = left;
       if (res.status === 404) return null;
       if (res.status === 403) throw new Error(`${publicUrl(url)} returned HTTP 403; check that DATA_GOV_API_KEY is valid`);
       if (res.status === 429 || res.status >= 500) {
@@ -123,9 +148,9 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
     const page = readLegislationPage(res.body, kind);
     sources.push({ url: publicUrl(url), sha256: sha(res.text) });
     pages.push(page);
-    if (!needsNextPage(page, congress)) return pages;
+    if (!needsNextPage(page)) return pages;
     offset += page.items.length;
-    if (pages.length > 40) throw new Error(`${id} ${kind}: more than 40 pages; refusing to keep paging`);
+    if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${id} ${kind}: more pages than the reported count allows; refusing to keep paging`);
   }
 }
 
@@ -215,7 +240,7 @@ async function main() {
   }
 
   const total = (k: "sponsoredCount" | "cosponsoredCount") => Object.values(members).reduce((n, m) => n + m[k], 0);
-  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${remaining === Infinity ? "?" : remaining} API calls left this hour`;
+  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made`;
   if (check) {
     console.log(`Check passed: ${summary}. Nothing written.`);
     return;

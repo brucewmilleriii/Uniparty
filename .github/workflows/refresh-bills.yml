@@ -29,6 +29,8 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # A full run reads every page of every member's lists, paced under the API's hourly limit.
+    timeout-minutes: 300
     env:
       DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
     steps:
