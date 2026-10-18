@@ -151,6 +151,7 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   const last = pages[pages.length - 1];
   if (!pages.length) errors.push(`${at}: no pages fetched`);
   else if (last.next !== null) errors.push(`${at}: stopped before the end of the list`);
+  else if (pages.some((p) => p.count !== last.count)) errors.push(`${at}: list changed while it was being read (count went from ${pages[0].count} to ${last.count})`);
   else if (listed !== last.count) errors.push(`${at}: list ended after ${listed} items but Congress.gov reports ${last.count}; response looks truncated`);
   return { links, amendments, errors };
 }

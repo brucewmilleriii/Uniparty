@@ -146,18 +146,26 @@ async function pool<T>(items: T[], fn: (item: T) => Promise<void>) {
 const errors: string[] = [];
 const missing: string[] = [];
 
+/** Read one whole list, once more if its count changed mid-read (an item added or removed shifts the offsets). */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
-  const pages: LegislationPage[] = [];
-  for (let offset = 0; ; ) {
-    const url = memberLegislationUrl(id, kind, offset, base);
-    const res = await get(url);
-    if (!res) return null;
-    const page = readLegislationPage(res.body, kind);
-    sources.push({ url: publicUrl(url), sha256: sha(res.text) });
-    pages.push(page);
-    if (!needsNextPage(page)) return pages;
-    offset += page.items.length;
-    if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${id} ${kind}: more pages than the reported count allows; refusing to keep paging`);
+  for (let attempt = 1; ; attempt++) {
+    const pages: LegislationPage[] = [];
+    const read: MemberBills["sources"] = [];
+    for (let offset = 0; ; ) {
+      const url = memberLegislationUrl(id, kind, offset, base);
+      const res = await get(url);
+      if (!res) return null;
+      const page = readLegislationPage(res.body, kind);
+      read.push({ url: publicUrl(url), sha256: sha(res.text) });
+      pages.push(page);
+      if (!needsNextPage(page)) break;
+      offset += page.items.length;
+      if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${id} ${kind}: more pages than the reported count allows; refusing to keep paging`);
+    }
+    if (pages.every((p) => p.count === pages[0].count) || attempt >= 2) {
+      sources.push(...read);
+      return pages;
+    }
   }
 }
 

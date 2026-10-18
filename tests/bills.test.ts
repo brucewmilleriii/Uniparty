@@ -130,6 +130,12 @@ describe("parseLegislation", () => {
       { items: [old], count: 3, next: null },
     ];
     expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/hres\/742 is listed twice/);
+    // An item removed mid-read shifts the next one past the offset; the count changing between pages gives it away.
+    const shrunk = [
+      { items: [a, old], count: 4, next: "page 2" },
+      { items: [b], count: 3, next: null },
+    ];
+    expect(parseLegislation(shrunk, "sponsored", "K000367", 119, today).errors.join()).toMatch(/changed while it was being read \(count went from 4 to 3\)/);
     // A malformed item from an earlier Congress isn't kept, so it isn't an error.
     const broken = { ...old, url: undefined, introducedDate: null };
     expect(parseLegislation(page([a, broken]), "sponsored", "K000367", 119, today).errors).toEqual([]);
