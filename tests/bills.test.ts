@@ -128,6 +128,9 @@ describe("parseLegislation", () => {
       { items: [old], count: 3, next: null },
     ];
     expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/hres\/742 is listed twice/);
+    // A malformed item from an earlier Congress isn't kept, so it isn't an error.
+    const broken = { ...old, url: undefined, introducedDate: null };
+    expect(parseLegislation(page([a, broken]), "sponsored", "K000367", 119, today).errors).toEqual([]);
     expect(parseLegislation(page([b, a]), "sponsored", "K000367", 119, today).errors).toEqual([]);
     expect(parseLegislation(page([{ ...a, introducedDate: "2027-01-01" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/future/);
     expect(parseLegislation(page([{ ...a, type: "XYZ" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/not a recognisable bill/);

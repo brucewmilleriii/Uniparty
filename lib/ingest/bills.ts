@@ -89,20 +89,20 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
     // Every item, whatever its Congress, so a repeat at a page boundary (the list changed
     // while being read by offset) can't hide an item that was pushed past it.
     const key = str(item.url).split("?")[0];
-    if (!key) errors.push(`${at}: item ${listed} has no URL`);
-    else if (seen.has(key)) errors.push(`${at}: ${key} is listed twice; the list probably changed while it was being read`);
-    seen.add(key);
+    if (key && seen.has(key)) errors.push(`${at}: ${key} is listed twice; the list probably changed while it was being read`);
+    if (key) seen.add(key);
     const c = Number(item.congress);
     const date = str(item.introducedDate);
     if (!Number.isInteger(c) || c < 1 || c > congress) {
       errors.push(`${at}: item ${listed} is in an impossible Congress (${String(item.congress)})`);
       continue;
     }
+    // Older items aren't kept, so a malformed one decades back mustn't sink the run.
+    if (c < congress) continue;
     if (!isDate(date)) {
       errors.push(`${at}: item ${listed} has an unreadable date "${date}"`);
       continue;
     }
-    if (c < congress) continue;
     if (Date.parse(date) > today.getTime() + 86_400_000) errors.push(`${at}: item ${listed} is dated in the future (${date})`);
     if (item.amendmentNumber !== undefined) {
       amendments++;

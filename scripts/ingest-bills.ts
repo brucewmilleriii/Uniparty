@@ -89,12 +89,13 @@ let calls = 0;
 
 /** Space requests evenly at HOURLY_BUDGET an hour, and back off when the key is nearly spent. */
 async function pace() {
+  const now = Date.now();
   if (latest < RESERVE) {
+    // Push the shared slot back, so every worker waits, not just this one.
     console.log(`Only ${latest} API calls left on the key this hour; waiting 5 minutes.`);
     latest = Infinity;
-    await sleep(300_000);
+    nextSlot = Math.max(nextSlot, now + 300_000);
   }
-  const now = Date.now();
   const at = Math.max(now, nextSlot);
   nextSlot = at + 3_600_000 / HOURLY_BUDGET;
   if (at > now) await sleep(at - now);
@@ -111,16 +112,22 @@ async function get(url: string): Promise<{ body: unknown; text: string } | null>
       if (Number.isFinite(left)) latest = left;
       if (res.status === 404) return null;
       if (res.status === 403) throw new Error(`${publicUrl(url)} returned HTTP 403; check that DATA_GOV_API_KEY is valid`);
-      if (res.status === 429 || res.status >= 500) {
+      if (res.status === 429) {
+        // Out of calls for the hour: make every worker wait 5 minutes, for up to an hour.
+        if (attempt >= 12) throw new Error(`${publicUrl(url)} was still rate limited after ${attempt} tries`);
+        latest = 0;
+        continue;
+      }
+      if (res.status >= 500) {
         if (attempt >= 4) throw new Error(`${publicUrl(url)} returned HTTP ${res.status} after ${attempt} tries`);
-        await sleep(Number(res.headers.get("retry-after")) * 1000 || 5000 * attempt);
+        await sleep(5000 * attempt);
         continue;
       }
       if (!res.ok) throw new Error(`${publicUrl(url)} returned HTTP ${res.status}`);
       const text = await res.text();
       return { body: JSON.parse(text), text };
     } catch (err) {
-      if (attempt >= 3 || (err instanceof Error && /HTTP (403|429|5\d\d)/.test(err.message))) throw err;
+      if (attempt >= 3 || (err instanceof Error && /HTTP (403|5\d\d)|rate limited/.test(err.message))) throw err;
       await sleep(2000 * attempt);
     }
   }
