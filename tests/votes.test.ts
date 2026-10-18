@@ -171,7 +171,7 @@ describe("mergeVotes", () => {
 });
 
 describe("committed snapshot", () => {
-  const snap = votesSnapshot as VotesSnapshot;
+  const snap = votesSnapshot as unknown as VotesSnapshot;
   it("is either the empty seed or a snapshot that passes validation", () => {
     if (snap.provenance.fetchedAt === null) {
       expect(snap.votes).toEqual([]);

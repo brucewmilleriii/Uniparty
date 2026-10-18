@@ -1,0 +1,77 @@
+name: Refresh bills
+
+# Pull every member's sponsored and cosponsored bills for the current Congress
+# from the Congress.gov API. Each list is checked for completeness and a sample
+# of bills is re-read from the bill's own record; the ingest exits non-zero
+# (failing this job, which GitHub emails you about) rather than publish bad data.
+#
+# Needs the DATA_GOV_API_KEY repo secret (free at https://api.data.gov/signup/).
+# Until it is added, this job skips with a warning instead of failing.
+on:
+  schedule:
+    - cron: "17 10 * * *" # daily, after Congress.gov's overnight update
+  workflow_dispatch:
+  # Pull straight away when a change to the bills ingest lands on main.
+  push:
+    branches: [main]
+    paths: [scripts/ingest-bills.ts, lib/ingest/bills.ts, .github/workflows/refresh-bills.yml]
+  # On pull requests that touch the ingest, fetch and validate a sample of members without writing anything.
+  pull_request:
+    paths: [scripts/ingest-bills.ts, lib/ingest/bills.ts, .github/workflows/refresh-bills.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-bills-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
+    steps:
+      - name: Skip until the API key is added
+        id: key
+        run: |
+          if [ -z "$DATA_GOV_API_KEY" ]; then
+            echo "::warning::The DATA_GOV_API_KEY repo secret is not set, so bills were not refreshed. Get a free key at https://api.data.gov/signup/ and add it under Settings > Secrets and variables > Actions."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.key.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.key.outputs.ready == 'true'
+      - name: Check the live source for a sample of members (pull requests)
+        if: steps.key.outputs.ready == 'true' && github.event_name == 'pull_request'
+        run: npm run ingest:bills -- --check --members 25
+      - name: Fetch, validate and write bills
+        if: steps.key.outputs.ready == 'true' && github.event_name != 'pull_request'
+        run: npm run ingest:bills
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - run: npm test
+        if: steps.key.outputs.ready == 'true'
+      - name: Commit the new snapshot if it changed
+        if: steps.key.outputs.ready == 'true' && github.event_name != 'pull_request'
+        run: |
+          if git diff --quiet data/bills.json; then
+            echo "No changes to bills."
+            exit 0
+          fi
+          git config user.name "uniparty-bot"
+          git config user.email "uniparty-bot@users.noreply.github.com"
+          git add data/bills.json
+          git commit -m "Refresh bills from Congress.gov"
+          # The roster and votes jobs may have pushed in the meantime; they touch different files.
+          git pull --rebase origin main
+          git push origin HEAD:main

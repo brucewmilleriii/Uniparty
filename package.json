@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ingest:roster": "tsx scripts/ingest-roster.ts",
-    "ingest:votes": "tsx scripts/ingest-votes.ts"
+    "ingest:votes": "tsx scripts/ingest-votes.ts",
+    "ingest:bills": "tsx scripts/ingest-bills.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

@@ -1,9 +1,10 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import snapshot from "@/data/roster.json";
+import billsSnapshot from "@/data/bills.json";
 import votesSnapshot from "@/data/votes.json";
 import { compareVotes } from "@/lib/ingest/votes";
-import type { Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
+import type { Bill, BillsSnapshot, Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
 
 /*
  * Roster reads. With SUPABASE_URL and SUPABASE_ANON_KEY set, members come from
@@ -98,7 +99,7 @@ export interface MemberVotes {
   fetchedAt: string | null;
 }
 
-const localVotes = votesSnapshot as VotesSnapshot;
+const localVotes = votesSnapshot as unknown as VotesSnapshot;
 
 function votesFromSnapshot(m: Member): MemberVotes {
   const { fetchedAt, window } = localVotes.provenance;
@@ -164,4 +165,98 @@ export async function getMemberVotes(m: Member): Promise<MemberVotes> {
 export function votesStatus() {
   const latest = (chamber: "house" | "senate") => localVotes.votes.filter((v) => v.chamber === chamber).sort(compareVotes)[0]?.date ?? null;
   return { rollCalls: localVotes.votes.length, fetchedAt: localVotes.provenance.fetchedAt, latestHouse: latest("house"), latestSenate: latest("senate") };
+}
+
+export interface MemberBillRow {
+  bill: Bill;
+  /** Introduced (sponsored) or signed on (cosponsored). */
+  date: string;
+}
+
+export interface MemberBillsView {
+  congress: number;
+  /** Null when Congress.gov had no record of this member at the last pull. */
+  sponsoredCount: number | null;
+  cosponsoredCount: number | null;
+  sponsored: MemberBillRow[];
+  cosponsored: MemberBillRow[];
+  source: string;
+  sourceHome: string;
+  fetchedAt: string | null;
+}
+
+const localBills = billsSnapshot as unknown as BillsSnapshot;
+
+function billsFromSnapshot(m: Member): MemberBillsView {
+  const { congress, fetchedAt, source, sourceHome } = localBills.provenance;
+  const mb = localBills.members[m.bioguideId];
+  const rows = (links: { billId: string; date: string }[] = []) => links.map((l) => ({ bill: localBills.bills[l.billId], date: l.date }));
+  return {
+    congress,
+    sponsoredCount: mb?.sponsoredCount ?? null,
+    cosponsoredCount: mb?.cosponsoredCount ?? null,
+    sponsored: rows(mb?.sponsored),
+    cosponsored: rows(mb?.cosponsored),
+    source,
+    sourceHome,
+    fetchedAt,
+  };
+}
+
+async function billsFromSupabase(m: Member, url: string, key: string): Promise<MemberBillsView> {
+  const db = createClient(url, key, { auth: { persistSession: false } });
+  const { congress, window, source, sourceHome } = localBills.provenance;
+  const recent = (role: "sponsor" | "cosponsor") =>
+    db.from("member_bills").select("link_date, bills!inner(*)").eq("bioguide_id", m.bioguideId).eq("role", role).eq("bills.congress", congress).order("link_date", { ascending: false }).limit(window);
+  const [counts, sp, co, run] = await Promise.all([
+    db.from("member_bill_counts").select("*").eq("bioguide_id", m.bioguideId).eq("congress", congress).maybeSingle(),
+    recent("sponsor"),
+    recent("cosponsor"),
+    db.from("ingest_runs").select("fetched_at").eq("source", "bills").eq("status", "ok").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  for (const r of [counts, sp, co]) if (r.error) throw new Error(`Supabase bills: ${r.error.message}`);
+  const rows = (data: { link_date: string; bills: unknown }[] | null): MemberBillRow[] =>
+    (data ?? []).map((r) => {
+      const b = r.bills as Record<string, never>;
+      return {
+        date: r.link_date,
+        bill: {
+          id: b.id,
+          congress: b.congress,
+          type: b.type,
+          number: b.number,
+          label: b.label,
+          title: b.title,
+          policyArea: b.policy_area,
+          latestAction: b.latest_action_date ? { date: b.latest_action_date, text: b.latest_action_text ?? "" } : null,
+          pageUrl: b.page_url,
+          sourceUrl: b.source_url,
+          fetchedAt: b.fetched_at,
+        },
+      };
+    });
+  return {
+    congress,
+    sponsoredCount: counts.data?.sponsored_count ?? null,
+    cosponsoredCount: counts.data?.cosponsored_count ?? null,
+    sponsored: rows(sp.data),
+    cosponsored: rows(co.data),
+    source,
+    sourceHome,
+    fetchedAt: run.data?.fetched_at ?? null,
+  };
+}
+
+/** A member's bill counts for the current Congress and their most recent sponsored and cosponsored bills. */
+export async function getMemberBills(m: Member): Promise<MemberBillsView> {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+  if (url && key) return billsFromSupabase(m, url, key);
+  return billsFromSnapshot(m);
+}
+
+/** Freshness of the bill data, for the health check. */
+export function billsStatus() {
+  const { congress, fetchedAt } = localBills.provenance;
+  return { congress, members: Object.keys(localBills.members).length, bills: Object.keys(localBills.bills).length, fetchedAt };
 }

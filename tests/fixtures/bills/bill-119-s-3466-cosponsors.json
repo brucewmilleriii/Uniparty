@@ -1,0 +1,173 @@
+{
+    "cosponsors": [
+        {
+            "bioguideId": "A000382",
+            "firstName": "Angela",
+            "fullName": "Sen. Alsobrooks, Angela D. [D-MD]",
+            "isOriginalCosponsor": true,
+            "lastName": "Alsobrooks",
+            "party": "D",
+            "sponsorshipDate": "2025-12-11",
+            "state": "MD",
+            "url": "https://api.congress.gov/v3/member/A000382?format=json"
+        },
+        {
+            "bioguideId": "K000383",
+            "firstName": "Angus",
+            "fullName": "Sen. King, Angus S., Jr. [I-ME]",
+            "isOriginalCosponsor": true,
+            "lastName": "King",
+            "middleName": "S.",
+            "party": "I",
+            "sponsorshipDate": "2025-12-11",
+            "state": "ME",
+            "url": "https://api.congress.gov/v3/member/K000383?format=json"
+        },
+        {
+            "bioguideId": "D000622",
+            "firstName": "Tammy",
+            "fullName": "Sen. Duckworth, Tammy [D-IL]",
+            "isOriginalCosponsor": true,
+            "lastName": "Duckworth",
+            "party": "D",
+            "sponsorshipDate": "2025-12-11",
+            "state": "IL",
+            "url": "https://api.congress.gov/v3/member/D000622?format=json"
+        },
+        {
+            "bioguideId": "H001042",
+            "firstName": "Mazie",
+            "fullName": "Sen. Hirono, Mazie K. [D-HI]",
+            "isOriginalCosponsor": true,
+            "lastName": "Hirono",
+            "middleName": "K.",
+            "party": "D",
+            "sponsorshipDate": "2025-12-11",
+            "state": "HI",
+            "url": "https://api.congress.gov/v3/member/H001042?format=json"
+        },
+        {
+            "bioguideId": "S000033",
+            "firstName": "Bernie",
+            "fullName": "Sen. Sanders, Bernard [I-VT]",
+            "isOriginalCosponsor": true,
+            "lastName": "Sanders",
+            "party": "I",
+            "sponsorshipDate": "2025-12-11",
+            "state": "VT",
+            "url": "https://api.congress.gov/v3/member/S000033?format=json"
+        },
+        {
+            "bioguideId": "M001111",
+            "firstName": "Patty",
+            "fullName": "Sen. Murray, Patty [D-WA]",
+            "isOriginalCosponsor": true,
+            "lastName": "Murray",
+            "party": "D",
+            "sponsorshipDate": "2025-12-11",
+            "state": "WA",
+            "url": "https://api.congress.gov/v3/member/M001111?format=json"
+        },
+        {
+            "bioguideId": "C001113",
+            "firstName": "Catherine",
+            "fullName": "Sen. Cortez Masto, Catherine [D-NV]",
+            "isOriginalCosponsor": true,
+            "lastName": "Cortez Masto",
+            "party": "D",
+            "sponsorshipDate": "2025-12-11",
+            "state": "NV",
+            "url": "https://api.congress.gov/v3/member/C001113?format=json"
+        },
+        {
+            "bioguideId": "S001181",
+            "firstName": "Jeanne",
+            "fullName": "Sen. Shaheen, Jeanne [D-NH]",
+            "isOriginalCosponsor": false,
+            "lastName": "Shaheen",
+            "party": "D",
+            "sponsorshipDate": "2025-12-16",
+            "state": "NH",
+            "url": "https://api.congress.gov/v3/member/S001181?format=json"
+        },
+        {
+            "bioguideId": "W000802",
+            "firstName": "Sheldon",
+            "fullName": "Sen. Whitehouse, Sheldon [D-RI]",
+            "isOriginalCosponsor": false,
+            "lastName": "Whitehouse",
+            "party": "D",
+            "sponsorshipDate": "2025-12-16",
+            "state": "RI",
+            "url": "https://api.congress.gov/v3/member/W000802?format=json"
+        },
+        {
+            "bioguideId": "B001230",
+            "firstName": "Tammy",
+            "fullName": "Sen. Baldwin, Tammy [D-WI]",
+            "isOriginalCosponsor": false,
+            "lastName": "Baldwin",
+            "party": "D",
+            "sponsorshipDate": "2025-12-17",
+            "state": "WI",
+            "url": "https://api.congress.gov/v3/member/B001230?format=json"
+        },
+        {
+            "bioguideId": "M001176",
+            "firstName": "Jeff",
+            "fullName": "Sen. Merkley, Jeff [D-OR]",
+            "isOriginalCosponsor": false,
+            "lastName": "Merkley",
+            "party": "D",
+            "sponsorshipDate": "2026-01-27",
+            "state": "OR",
+            "url": "https://api.congress.gov/v3/member/M001176?format=json"
+        },
+        {
+            "bioguideId": "S001150",
+            "firstName": "Adam",
+            "fullName": "Sen. Schiff, Adam B. [D-CA]",
+            "isOriginalCosponsor": false,
+            "lastName": "Schiff",
+            "middleName": "B.",
+            "party": "D",
+            "sponsorshipDate": "2026-02-24",
+            "state": "CA",
+            "url": "https://api.congress.gov/v3/member/S001150?format=json"
+        },
+        {
+            "bioguideId": "S001208",
+            "firstName": "Elissa",
+            "fullName": "Sen. Slotkin, Elissa [D-MI]",
+            "isOriginalCosponsor": false,
+            "lastName": "Slotkin",
+            "party": "D",
+            "sponsorshipDate": "2026-09-28",
+            "state": "MI",
+            "url": "https://api.congress.gov/v3/member/S001208?format=json"
+        },
+        {
+            "bioguideId": "K000367",
+            "firstName": "Amy",
+            "fullName": "Sen. Klobuchar, Amy [D-MN]",
+            "isOriginalCosponsor": false,
+            "lastName": "Klobuchar",
+            "party": "D",
+            "sponsorshipDate": "2026-09-29",
+            "state": "MN",
+            "url": "https://api.congress.gov/v3/member/K000367?format=json"
+        }
+    ],
+    "pagination": {
+        "count": 14,
+        "countIncludingWithdrawnCosponsors": 14
+    },
+    "request": {
+        "billNumber": "3466",
+        "billType": "s",
+        "billUrl": "https://api.congress.gov/v3/bill/119/s/3466?format=json",
+        "congress": "119",
+        "contentType": "application/json",
+        "format": "json"
+    }
+}

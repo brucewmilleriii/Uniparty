@@ -1,0 +1,133 @@
+{
+    "cosponsoredLegislation": [
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-30",
+            "latestAction": {
+                "actionDate": "2026-09-30",
+                "text": "Read twice and referred to the Committee on Health, Education, Labor, and Pensions."
+            },
+            "number": "5665",
+            "policyArea": {
+                "name": "Education"
+            },
+            "title": "America’s College Promise Act of 2026",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/5665?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-30",
+            "latestAction": {
+                "actionDate": "2026-09-30",
+                "text": "Submitted in the Senate, considered, and agreed to without amendment and with a preamble by Unanimous Consent. (consideration: CR S5299; text: CR S5272-5273)"
+            },
+            "number": "946",
+            "policyArea": {
+                "name": "Armed Forces and National Security"
+            },
+            "title": "A resolution designating September 30, 2026, as \"National Veterans Suicide Prevention Day\".",
+            "type": "SRES",
+            "url": "https://api.congress.gov/v3/bill/119/sres/946?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-30",
+            "latestAction": {
+                "actionDate": "2026-09-30",
+                "text": "Read twice and referred to the Committee on the Judiciary."
+            },
+            "number": "5656",
+            "policyArea": {
+                "name": "Crime and Law Enforcement"
+            },
+            "title": "Domestic Violence SAFE Notice Act",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/5656?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-30",
+            "latestAction": {
+                "actionDate": "2026-09-30",
+                "text": "Submitted in the Senate, considered, and agreed to without amendment and with a preamble by Unanimous Consent. (consideration: CR S5299; text: CR S5272)"
+            },
+            "number": "945",
+            "policyArea": {
+                "name": "Animals"
+            },
+            "title": "A resolution designating November 7, 2026, as \"National Bison Day\".",
+            "type": "SRES",
+            "url": "https://api.congress.gov/v3/bill/119/sres/945?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-30",
+            "latestAction": {
+                "actionDate": "2026-09-30",
+                "text": "Referred to the Committee on the Judiciary. (text: CR S5265-5266)"
+            },
+            "number": "931",
+            "policyArea": {
+                "name": "Arts, Culture, Religion"
+            },
+            "title": "A resolution recognizing the month of October 2026 as Filipino American History Month and celebrating the history and culture of Filipino Americans and their immense contributions to the United States.",
+            "type": "SRES",
+            "url": "https://api.congress.gov/v3/bill/119/sres/931?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-30",
+            "latestAction": {
+                "actionDate": "2026-09-30",
+                "text": "Read twice and referred to the Committee on the Judiciary."
+            },
+            "number": "220",
+            "policyArea": {
+                "name": "Civil Rights and Liberties, Minority Issues"
+            },
+            "title": "Original Slavery Remembrance Day Resolution",
+            "type": "SJRES",
+            "url": "https://api.congress.gov/v3/bill/119/sjres/220?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-30",
+            "latestAction": {
+                "actionDate": "2026-09-30",
+                "text": "Read twice and referred to the Committee on Health, Education, Labor, and Pensions."
+            },
+            "number": "5614",
+            "policyArea": {
+                "name": "Education"
+            },
+            "title": "Beyond the Box for Higher Education Act of 2026",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/5614?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-29",
+            "latestAction": {
+                "actionDate": "2025-12-11",
+                "text": "Read twice and referred to the Committee on Veterans' Affairs."
+            },
+            "number": "3466",
+            "policyArea": {
+                "name": "Armed Forces and National Security"
+            },
+            "title": "Honor Our Promise to Veterans Act of 2025",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/3466?format=json"
+        }
+    ],
+    "pagination": {
+        "count": 5725,
+        "next": "https://api.congress.gov/v3/member/K000367/cosponsored-legislation?offset=8&limit=8&format=json"
+    },
+    "request": {
+        "bioguideId": "k000367",
+        "contentType": "application/json",
+        "format": "json"
+    }
+}
