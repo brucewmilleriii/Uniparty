@@ -288,6 +288,11 @@ describe("readWholeList", () => {
     expect(unconfirmedError("T000001 sponsored", { ...short, confirmed: true })).toBeNull();
   });
 
+  it("refuses to keep paging past what the reported count allows", async () => {
+    const endless = async (offset: number) => ({ page: { items: [item(offset + 1)], count: 1, next: "more" } as LegislationPage, source: offset });
+    await expect(readWholeList("T000001 sponsored", endless)).rejects.toThrow(/more pages than the reported count allows/);
+  });
+
   it("returns null for a member with no list, but throws on a 404 partway through", async () => {
     expect(await readWholeList("T000001 sponsored", async () => null)).toBeNull();
     const s = server(() => items);
