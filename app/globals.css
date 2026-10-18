@@ -155,6 +155,29 @@ td.mono{font-size:12.5px}
 .bills .ba{min-width:180px}
 @media (max-width:600px){.bills th:nth-child(2),.bills td:nth-child(2){display:none}.bills .bt{min-width:160px}.bills .ba{min-width:140px}}
 
+/* Campaign money */
+.stats4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px;max-width:720px;border:1px solid var(--rule)}
+.stats4 .stat+.stat{border-left:1px solid var(--hair)}
+@media (max-width:600px){.stats4{grid-template-columns:repeat(2,minmax(0,1fr))}.stats4 .stat:nth-child(3){border-left:0}.stats4 .stat:nth-child(n+3){border-top:1px solid var(--hair)}}
+.mbar{display:flex;height:14px;max-width:720px;margin:4px 0 12px;background:var(--tint)}
+.mbar i{display:block;height:100%;min-width:2px}
+.mbar i+i{box-shadow:inset 1px 0 0 var(--paper)}
+.sw{display:inline-block;width:11px;height:11px;margin-right:8px;vertical-align:-1px}
+.m-unitemized{background:var(--ink)}
+.m-itemized{background:var(--ink-2)}
+.m-pac{background:var(--accent)}
+.m-party{background:repeating-linear-gradient(135deg,var(--accent) 0 2px,transparent 2px 4px);border:1px solid var(--accent)}
+.m-self{background:var(--late)}
+.m-loans{background:repeating-linear-gradient(135deg,var(--late) 0 2px,transparent 2px 4px);border:1px solid var(--late)}
+.m-transfers{background:var(--ink-3)}
+.m-other{background:var(--hair)}
+table.money{max-width:720px}
+.money .num{text-align:right;white-space:nowrap;padding-left:16px}
+.money th.num{padding-right:0}
+.money td:last-child,.money th:last-child{padding-right:0}
+.money tfoot td{font-weight:700;border-bottom:0;border-top:1px solid var(--rule)}
+.more-note{margin-top:12px}
+
 /* Closing row */
 .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
 .three>*{padding:0 22px;min-width:0}

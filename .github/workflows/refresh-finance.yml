@@ -1,0 +1,77 @@
+name: Refresh campaign finance
+
+# Pull every member's campaign committee totals for the current two-year cycle
+# from the FEC API. Each campaign's record must add up line by line and match the
+# FEC's batch totals; the ingest exits non-zero (failing this job, which GitHub
+# emails you about) rather than publish bad data.
+#
+# Needs the DATA_GOV_API_KEY repo secret (free at https://api.data.gov/signup/).
+# Until it is added, this job skips with a warning instead of failing.
+on:
+  schedule:
+    - cron: "43 11 * * *" # daily, after the FEC's overnight processing and an hour after the bills job
+  workflow_dispatch:
+  # Pull straight away when a change to the finance ingest lands on main.
+  push:
+    branches: [main]
+    paths: [scripts/ingest-finance.ts, lib/ingest/finance.ts, .github/workflows/refresh-finance.yml]
+  # On pull requests that touch the ingest, fetch and validate a sample of members without writing anything.
+  pull_request:
+    paths: [scripts/ingest-finance.ts, lib/ingest/finance.ts, .github/workflows/refresh-finance.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-finance-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
+    steps:
+      - name: Skip until the API key is added
+        id: key
+        run: |
+          if [ -z "$DATA_GOV_API_KEY" ]; then
+            echo "::warning::The DATA_GOV_API_KEY repo secret is not set, so campaign finance was not refreshed. Get a free key at https://api.data.gov/signup/ and add it under Settings > Secrets and variables > Actions."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.key.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.key.outputs.ready == 'true'
+      - name: Check the live source for a sample of members (pull requests)
+        if: steps.key.outputs.ready == 'true' && github.event_name == 'pull_request'
+        run: npm run ingest:finance -- --check --members 25
+      - name: Fetch, validate and write campaign finance
+        if: steps.key.outputs.ready == 'true' && github.event_name != 'pull_request'
+        run: npm run ingest:finance
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - run: npm test
+        if: steps.key.outputs.ready == 'true'
+      - name: Commit the new snapshot if it changed
+        if: steps.key.outputs.ready == 'true' && github.event_name != 'pull_request'
+        run: |
+          if git diff --quiet data/finance.json; then
+            echo "No changes to campaign finance."
+            exit 0
+          fi
+          git config user.name "uniparty-bot"
+          git config user.email "uniparty-bot@users.noreply.github.com"
+          git add data/finance.json
+          git commit -m "Refresh campaign finance from the FEC"
+          # The roster, votes and bills jobs may have pushed in the meantime; they touch different files.
+          git pull --rebase origin main
+          git push origin HEAD:main

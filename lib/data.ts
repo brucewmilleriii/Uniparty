@@ -3,9 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import snapshot from "@/data/roster.json";
 import billsSnapshot from "@/data/bills.json";
 import votesSnapshot from "@/data/votes.json";
+import financeSnapshot from "@/data/finance.json";
+import { campaignFromRow, isCongressionalId, memberFinanceStatus, type MemberFinanceStatus } from "@/lib/ingest/finance";
 import { compareVotes } from "@/lib/ingest/votes";
 import { partyMajority, type Side } from "@/lib/summary";
-import type { Bill, BillsSnapshot, Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
+import type { Bill, BillsSnapshot, CampaignTotals, FinanceSnapshot, Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
 
 /*
  * Roster reads. With SUPABASE_URL and SUPABASE_ANON_KEY set, members come from
@@ -269,4 +271,59 @@ export async function getMemberBills(m: Member): Promise<MemberBillsView> {
 export function billsStatus() {
   const { congress, fetchedAt } = localBills.provenance;
   return { congress, members: Object.keys(localBills.members).length, bills: Object.keys(localBills.bills).length, fetchedAt };
+}
+
+export interface MemberFinanceView {
+  /** Two-year cycle, named for its even year. */
+  cycle: number;
+  /**
+   * "ok": the last pull covered this member, and `campaigns` lists what it found (the seat's campaign first;
+   * empty when nothing was filed). "no-ids": the roster links no House or Senate FEC candidate id to them.
+   * "not-covered": they have ids but the last pull didn't include them (they joined the roster since).
+   */
+  status: MemberFinanceStatus;
+  campaigns: CampaignTotals[];
+  source: string;
+  sourceHome: string;
+  fetchedAt: string | null;
+}
+
+const localFinance = financeSnapshot as unknown as FinanceSnapshot;
+
+function financeFromSnapshot(m: Member): MemberFinanceView {
+  const { cycle, fetchedAt, source, sourceHome } = localFinance.provenance;
+  return { cycle, ...memberFinanceStatus(m, localFinance.members[m.bioguideId]), source, sourceHome, fetchedAt };
+}
+
+async function financeFromSupabase(m: Member, url: string, key: string): Promise<MemberFinanceView> {
+  const db = createClient(url, key, { auth: { persistSession: false } });
+  const { cycle, source, sourceHome } = localFinance.provenance;
+  const ids = m.fecIds.filter(isCongressionalId);
+  const [rows, covered, run] = await Promise.all([
+    // Only the member's current ids, so a campaign since unlinked from them isn't shown.
+    ids.length ? db.from("campaign_totals").select("*").eq("bioguide_id", m.bioguideId).eq("cycle", cycle).in("candidate_id", ids) : { data: [], error: null },
+    db.from("finance_coverage").select("candidate_ids, fetched_at").eq("bioguide_id", m.bioguideId).eq("cycle", cycle).maybeSingle(),
+    db.from("ingest_runs").select("fetched_at").eq("source", "finance").eq("status", "ok").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (rows.error) throw new Error(`Supabase campaign_totals: ${rows.error.message}`);
+  if (covered.error) throw new Error(`Supabase finance_coverage: ${covered.error.message}`);
+  const entry = covered.data
+    ? { candidateIds: covered.data.candidate_ids as string[], campaigns: rows.data.map(campaignFromRow), fetchedAt: covered.data.fetched_at }
+    : undefined;
+  return { cycle, ...memberFinanceStatus(m, entry), source, sourceHome, fetchedAt: run.data?.fetched_at ?? null };
+}
+
+/** A member's campaign money for the current two-year cycle, from the FEC. */
+export async function getMemberFinance(m: Member): Promise<MemberFinanceView> {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+  if (url && key) return financeFromSupabase(m, url, key);
+  return financeFromSnapshot(m);
+}
+
+/** Freshness of the campaign finance data, for the health check. */
+export function financeStatus() {
+  const { cycle, fetchedAt } = localFinance.provenance;
+  const members = Object.values(localFinance.members);
+  return { cycle, members: members.length, campaigns: members.reduce((n, m) => n + m.campaigns.length, 0), fetchedAt };
 }
