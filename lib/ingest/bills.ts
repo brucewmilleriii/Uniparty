@@ -115,7 +115,7 @@ export async function readWholeList<S>(
       if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
     }
     const changed =
-      (all.length > 0 && (all[0].count !== pages[0].count || !pages.every((p) => p.count === pages[0].count))) ||
+      (all.length > 0 && [...all, ...pages].some((p) => p.count !== pages[0].count)) ||
       (toConfirm !== null && [...keysOf(pages)].some((k) => !toConfirm!.has(k)));
     if (changed) {
       all = [];

@@ -262,6 +262,16 @@ describe("readWholeList", () => {
     expect(new Set(list!.pages.flatMap((pg) => pg.items.map((i) => i.url)))).toEqual(new Set([a, b, y].map((i) => i.url)));
   });
 
+  it("drops a read whose own pages disagree on the count once a later read does", async () => {
+    // An item is added during read 1's second page and withdrawn again before read 2.
+    let n = 0;
+    const s = server(() => (++n === 2 ? [...items, item(31)] : items));
+    const list = await readWholeList("T000001 sponsored", s.readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(3);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
   it("reports an unconfirmed list when the reads run out", async () => {
     const [a, b, x] = [item(1), item(2), item(3)];
     const passes = [[a, x, a], [b, a, b]];
