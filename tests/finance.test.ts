@@ -37,10 +37,13 @@ const withField = (id: string, field: string, value: unknown) => {
 };
 
 describe("fecCycle", () => {
-  it("uses the even year's cycle, and the one just ended until the first reports of a new cycle are in", () => {
+  it("uses the even year's cycle, and the one just ended until every campaign has reported in the new one", () => {
     expect(fecCycle(new Date("2026-10-18"))).toBe(2026);
     expect(fecCycle(new Date("2027-02-01"))).toBe(2026);
-    expect(fecCycle(new Date("2027-05-01"))).toBe(2028);
+    // House campaigns have filed the April quarterly, but most senators' first report is due July 31.
+    expect(fecCycle(new Date("2027-05-01"))).toBe(2026);
+    expect(fecCycle(new Date("2027-08-14T23:59:00Z"))).toBe(2026);
+    expect(fecCycle(new Date("2027-08-15"))).toBe(2028);
     expect(fecCycle(new Date("2028-01-05"))).toBe(2028);
   });
 });
@@ -159,8 +162,8 @@ describe("toMemberFinance", () => {
   it("puts the campaign for the member's seat first", () => {
     const house = parse("H8CA05035").totals!;
     const senate = parse("S4VT00033").totals!;
-    expect(toMemberFinance({ chamber: "house" }, [senate, house], fetchedAt).campaigns.map((c) => c.office)).toEqual(["H", "S"]);
-    expect(toMemberFinance({ chamber: "senate" }, [house, senate], fetchedAt).campaigns.map((c) => c.office)).toEqual(["S", "H"]);
+    expect(toMemberFinance({ chamber: "house" }, ["S4VT00033", "H8CA05035"], [senate, house], fetchedAt).campaigns.map((c) => c.office)).toEqual(["H", "S"]);
+    expect(toMemberFinance({ chamber: "senate" }, ["H8CA05035", "S4VT00033"], [house, senate], fetchedAt).campaigns.map((c) => c.office)).toEqual(["S", "H"]);
   });
 });
 
@@ -170,8 +173,19 @@ describe("memberFinanceStatus", () => {
 
   it("only says a member filed nothing when the last pull covered them", () => {
     const m = { chamber: "house" as const, fecIds: ["H8CA05035"] };
-    expect(memberFinanceStatus(m, { campaigns: [], fetchedAt })).toEqual({ status: "ok", campaigns: [] });
+    expect(memberFinanceStatus(m, { candidateIds: ["H8CA05035"], campaigns: [], fetchedAt })).toEqual({ status: "ok", campaigns: [] });
     expect(memberFinanceStatus(m, undefined)).toEqual({ status: "not-covered", campaigns: [] });
+  });
+
+  it("treats a member linked to an id the pull didn't ask about as not covered", () => {
+    const m = { chamber: "senate" as const, fecIds: ["H8CA05035", "S9CA00001"] };
+    expect(memberFinanceStatus(m, { candidateIds: ["H8CA05035"], campaigns: [house()], fetchedAt })).toEqual({ status: "not-covered", campaigns: [] });
+  });
+
+  it("leaves out campaigns for ids the roster no longer links to the member", () => {
+    const m = { chamber: "house" as const, fecIds: ["H8CA05035"] };
+    const entry = { candidateIds: ["H8CA05035", "S4VT00033"], campaigns: [house(), senate()], fetchedAt };
+    expect(memberFinanceStatus(m, entry).campaigns.map((c) => c.candidateId)).toEqual(["H8CA05035"]);
   });
 
   it("tells apart a member with no House or Senate FEC id", () => {
@@ -180,7 +194,7 @@ describe("memberFinanceStatus", () => {
   });
 
   it("puts the seat's campaign first", () => {
-    const r = memberFinanceStatus({ chamber: "senate", fecIds: ["H8VT01016", "S4VT00033"] }, { campaigns: [house(), senate()], fetchedAt });
+    const r = memberFinanceStatus({ chamber: "senate", fecIds: ["H8CA05035", "S4VT00033"] }, { candidateIds: ["H8CA05035", "S4VT00033"], campaigns: [house(), senate()], fetchedAt });
     expect(r.campaigns.map((c) => c.candidateId)).toEqual(["S4VT00033", "H8CA05035"]);
   });
 });
@@ -208,9 +222,9 @@ describe("validateFinanceSnapshot", () => {
       provenance: { source: "the FEC", sourceHome: "https://www.fec.gov/data/", fetchedAt, cycle: 2026 },
       sources: [{ url: candidatesTotalsUrl(asked, 2026), sha256: "b".repeat(64) }],
       members: {
-        P000197: toMemberFinance({ chamber: "house" }, [t("H8CA05035")], fetchedAt),
-        K000367: toMemberFinance({ chamber: "senate" }, [t("S6MN00267")], fetchedAt),
-        S000033: toMemberFinance({ chamber: "senate" }, [t("S4VT00033")], fetchedAt),
+        P000197: toMemberFinance({ chamber: "house" }, ["H8CA05035"], [t("H8CA05035")], fetchedAt),
+        K000367: toMemberFinance({ chamber: "senate" }, ["S6MN00267"], [t("S6MN00267")], fetchedAt),
+        S000033: toMemberFinance({ chamber: "senate" }, ["S4VT00033"], [t("S4VT00033")], fetchedAt),
       },
     };
   };
@@ -224,6 +238,12 @@ describe("validateFinanceSnapshot", () => {
     const snap = build();
     snap.members.K000367.campaigns = [];
     expect(validateFinanceSnapshot(snap, ids, null).join()).toMatch(/Only 2 of 3 members/);
+  });
+
+  it("rejects a campaign for an id that wasn't asked about", () => {
+    const snap = build();
+    snap.members.P000197.candidateIds = [];
+    expect(validateFinanceSnapshot(snap, ids, null).join()).toMatch(/P000197: H8CA05035 wasn't one of the ids asked about/);
   });
 
   it("rejects one campaign credited to two members", () => {

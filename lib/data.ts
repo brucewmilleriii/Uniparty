@@ -302,12 +302,14 @@ async function financeFromSupabase(m: Member, url: string, key: string): Promise
   const [rows, covered, run] = await Promise.all([
     // Only the member's current ids, so a campaign since unlinked from them isn't shown.
     ids.length ? db.from("campaign_totals").select("*").eq("bioguide_id", m.bioguideId).eq("cycle", cycle).in("candidate_id", ids) : { data: [], error: null },
-    db.from("finance_coverage").select("fetched_at").eq("bioguide_id", m.bioguideId).eq("cycle", cycle).maybeSingle(),
+    db.from("finance_coverage").select("candidate_ids, fetched_at").eq("bioguide_id", m.bioguideId).eq("cycle", cycle).maybeSingle(),
     db.from("ingest_runs").select("fetched_at").eq("source", "finance").eq("status", "ok").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (rows.error) throw new Error(`Supabase campaign_totals: ${rows.error.message}`);
   if (covered.error) throw new Error(`Supabase finance_coverage: ${covered.error.message}`);
-  const entry = covered.data ? { campaigns: rows.data.map(campaignFromRow), fetchedAt: covered.data.fetched_at } : undefined;
+  const entry = covered.data
+    ? { candidateIds: covered.data.candidate_ids as string[], campaigns: rows.data.map(campaignFromRow), fetchedAt: covered.data.fetched_at }
+    : undefined;
   return { cycle, ...memberFinanceStatus(m, entry), source, sourceHome, fetchedAt: run.data?.fetched_at ?? null };
 }
 

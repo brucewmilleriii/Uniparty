@@ -210,6 +210,8 @@ export interface CampaignTotals {
 }
 
 export interface MemberFinance {
+  /** The House and Senate candidate ids the pull asked the FEC about for this member. */
+  candidateIds: string[];
   /** The campaign for the member's current seat first. Empty when no reports were filed in the cycle. */
   campaigns: CampaignTotals[];
   fetchedAt: string;

@@ -35,14 +35,16 @@ export const fecPageUrl = (id: string, cycle: number) => `https://www.fec.gov/da
 export const isCongressionalId = (id: string) => /^[HS]\d[A-Z]{2}\d{5}$/.test(id);
 
 /**
- * The two-year cycle to show. Cycles end in even years. Early in an odd year the new
- * cycle has no reports yet (the first, the April quarterly, is due April 15), so until
- * May the cycle that just ended is still the latest complete picture.
+ * The two-year cycle to show. Cycles end in even years. In an odd year the new cycle fills in
+ * slowly: House campaigns first report for it on April 15, but Senate campaigns not up at the
+ * next election file semiannually, so about two thirds of senators first report on July 31.
+ * Until mid-August, when those are in, the cycle that just ended is the latest complete picture
+ * for everyone, and it stays labelled with its own cycle and coverage dates.
  */
 export function fecCycle(today: Date): number {
   const y = today.getUTCFullYear();
   if (y % 2 === 0) return y;
-  return today.getUTCMonth() >= 4 ? y + 1 : y - 1;
+  return today.getTime() >= Date.UTC(y, 7, 15) ? y + 1 : y - 1;
 }
 
 type Obj = Record<string, unknown>;
@@ -253,9 +255,10 @@ export function receiptParts(c: CampaignTotals): { key: string; label: string; a
 }
 
 /** A member's campaigns, the one for the seat they hold first, then by money raised. */
-export function toMemberFinance(m: Pick<Member, "chamber">, campaigns: CampaignTotals[], fetchedAt: string): MemberFinance {
+export function toMemberFinance(m: Pick<Member, "chamber">, candidateIds: string[], campaigns: CampaignTotals[], fetchedAt: string): MemberFinance {
   const seat = m.chamber === "senate" ? "S" : "H";
   return {
+    candidateIds,
     campaigns: [...campaigns].sort((a, b) => Number(b.office === seat) - Number(a.office === seat) || b.receipts - a.receipts),
     fetchedAt,
   };
@@ -265,15 +268,18 @@ export type MemberFinanceStatus = "ok" | "no-ids" | "not-covered";
 
 /**
  * What can be said about a member's money, given the last pull's entry for them (undefined
- * when the pull didn't include them): only a member the pull covered can be said to have filed nothing.
+ * when the pull didn't include them). Only a member whose every current candidate id the pull
+ * asked about can be said to have filed nothing, and only campaigns for their current ids are shown.
  */
 export function memberFinanceStatus(
   m: Pick<Member, "chamber" | "fecIds">,
   entry: MemberFinance | undefined,
 ): { status: MemberFinanceStatus; campaigns: CampaignTotals[] } {
-  if (!m.fecIds.some(isCongressionalId)) return { status: "no-ids", campaigns: [] };
-  if (!entry) return { status: "not-covered", campaigns: [] };
-  return { status: "ok", campaigns: toMemberFinance(m, entry.campaigns, entry.fetchedAt).campaigns };
+  const ids = m.fecIds.filter(isCongressionalId);
+  if (!ids.length) return { status: "no-ids", campaigns: [] };
+  if (!entry || ids.some((id) => !entry.candidateIds.includes(id))) return { status: "not-covered", campaigns: [] };
+  const current = entry.campaigns.filter((c) => ids.includes(c.candidateId));
+  return { status: "ok", campaigns: toMemberFinance(m, ids, current, entry.fetchedAt).campaigns };
 }
 
 /** A campaign_totals row from Supabase, where numeric columns arrive as strings. */
@@ -333,6 +339,7 @@ export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: s
   for (const [id, m] of Object.entries(snap.members)) {
     for (const c of m.campaigns) {
       if (c.cycle !== cycle) errors.push(`${id}: ${c.candidateId} is for cycle ${c.cycle}, not ${cycle}`);
+      if (!m.candidateIds.includes(c.candidateId)) errors.push(`${id}: ${c.candidateId} wasn't one of the ids asked about`);
       if (!/^[0-9a-f]{64}$/.test(c.sha256) || !c.sourceUrl.startsWith(API_BASE) || !c.pageUrl.startsWith("https://www.fec.gov/"))
         errors.push(`${id}: ${c.candidateId} has no source hash or URL`);
       const other = owner.get(c.candidateId);

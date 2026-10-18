@@ -158,7 +158,7 @@ async function main() {
   const byMember: Record<string, MemberFinance> = {};
   for (const m of withIds) {
     const campaigns = m.fecIds.map((id) => totals.get(id)).filter((c): c is CampaignTotals => c !== undefined);
-    byMember[m.bioguideId] = toMemberFinance(m, campaigns, fetchedAt);
+    byMember[m.bioguideId] = toMemberFinance(m, m.fecIds, campaigns, fetchedAt);
   }
   const snapshot: FinanceSnapshot = {
     provenance: { ...FINANCE_SOURCE, fetchedAt, cycle },

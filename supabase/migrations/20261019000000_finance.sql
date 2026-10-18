@@ -32,12 +32,14 @@ create table if not exists campaign_totals (
 );
 create index if not exists campaign_totals_member_idx on campaign_totals (bioguide_id, cycle);
 
--- Which members each cycle's latest pull covered, so a member with no rows can be told
--- apart from one the pull never reached (say, sworn in since).
+-- Which members, and which of their candidate ids, each cycle's latest pull asked about,
+-- so a member with no rows can be told apart from one the pull never reached (sworn in
+-- since, or linked to a new campaign since).
 create table if not exists finance_coverage (
-  bioguide_id text not null,
-  cycle       integer not null,
-  fetched_at  timestamptz not null,
+  bioguide_id   text not null,
+  cycle         integer not null,
+  candidate_ids text[] not null,
+  fetched_at    timestamptz not null,
   primary key (bioguide_id, cycle)
 );
 
