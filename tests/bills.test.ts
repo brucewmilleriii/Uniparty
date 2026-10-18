@@ -121,6 +121,13 @@ describe("parseLegislation", () => {
     const [a, b] = klobSponsored.items;
     const page = (items: Record<string, unknown>[]) => [{ items, count: items.length, next: null }];
     expect(parseLegislation(page([a, a]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/listed twice/);
+    // A repeat of an earlier-Congress item across a page boundary means the list shifted and an item may be missing.
+    const old = pelosiSponsored.items[0];
+    const pages = [
+      { items: [a, old], count: 3, next: "page 2" },
+      { items: [old], count: 3, next: null },
+    ];
+    expect(parseLegislation(pages, "sponsored", "K000367", 119, today).errors.join()).toMatch(/hres\/742 is listed twice/);
     expect(parseLegislation(page([b, a]), "sponsored", "K000367", 119, today).errors).toEqual([]);
     expect(parseLegislation(page([{ ...a, introducedDate: "2027-01-01" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/future/);
     expect(parseLegislation(page([{ ...a, type: "XYZ" }]), "sponsored", "K000367", 119, today).errors.join()).toMatch(/not a recognisable bill/);
