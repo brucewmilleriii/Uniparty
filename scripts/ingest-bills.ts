@@ -103,33 +103,47 @@ async function pace() {
 
 /** GET JSON with retries on rate limiting and server errors; returns null on 404. */
 async function get(url: string): Promise<{ body: unknown; text: string } | null> {
-  for (let attempt = 1; ; attempt++) {
+  // Each kind of failure has its own budget, so waiting out rate limits doesn't use up the retries for a blip.
+  let limited = 0;
+  let serverErrors = 0;
+  let networkErrors = 0;
+  for (;;) {
     await pace();
     calls++;
+    let res: Response;
     try {
-      const res = await fetch(url, { headers: { "X-Api-Key": key!, Accept: "application/json", "User-Agent": "uniparty-ingest (+https://github.com/brucewmilleriii/uniparty)" } });
-      const left = Number(res.headers.get("x-ratelimit-remaining"));
-      if (Number.isFinite(left)) latest = left;
-      if (res.status === 404) return null;
-      if (res.status === 403) throw new Error(`${publicUrl(url)} returned HTTP 403; check that DATA_GOV_API_KEY is valid`);
-      if (res.status === 429) {
-        // Out of calls for the hour: make every worker wait 5 minutes, for up to an hour.
-        if (attempt >= 12) throw new Error(`${publicUrl(url)} was still rate limited after ${attempt} tries`);
-        latest = 0;
-        continue;
-      }
-      if (res.status >= 500) {
-        if (attempt >= 4) throw new Error(`${publicUrl(url)} returned HTTP ${res.status} after ${attempt} tries`);
-        await sleep(5000 * attempt);
-        continue;
-      }
-      if (!res.ok) throw new Error(`${publicUrl(url)} returned HTTP ${res.status}`);
-      const text = await res.text();
-      return { body: JSON.parse(text), text };
+      res = await fetch(url, { headers: { "X-Api-Key": key!, Accept: "application/json", "User-Agent": "uniparty-ingest (+https://github.com/brucewmilleriii/uniparty)" } });
     } catch (err) {
-      if (attempt >= 3 || (err instanceof Error && /HTTP (403|5\d\d)|rate limited/.test(err.message))) throw err;
-      await sleep(2000 * attempt);
+      if (++networkErrors >= 3) throw err;
+      await sleep(2000 * networkErrors);
+      continue;
     }
+    const left = Number(res.headers.get("x-ratelimit-remaining"));
+    if (Number.isFinite(left)) latest = left;
+    if (res.status === 404) return null;
+    if (res.status === 403) throw new Error(`${publicUrl(url)} returned HTTP 403; check that DATA_GOV_API_KEY is valid`);
+    if (res.status === 429) {
+      // Out of calls for the hour: make every worker wait 5 minutes, for up to an hour.
+      if (++limited >= 12) throw new Error(`${publicUrl(url)} was still rate limited after ${limited} tries`);
+      latest = 0;
+      continue;
+    }
+    if (res.status >= 500) {
+      if (++serverErrors >= 4) throw new Error(`${publicUrl(url)} returned HTTP ${res.status} after ${serverErrors} tries`);
+      await sleep(5000 * serverErrors);
+      continue;
+    }
+    if (!res.ok) throw new Error(`${publicUrl(url)} returned HTTP ${res.status}`);
+    let text: string;
+    try {
+      text = await res.text();
+    } catch (err) {
+      // The body was cut off mid-read.
+      if (++networkErrors >= 3) throw err;
+      await sleep(2000 * networkErrors);
+      continue;
+    }
+    return { body: JSON.parse(text), text };
   }
 }
 
