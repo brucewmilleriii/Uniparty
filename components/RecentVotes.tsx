@@ -7,7 +7,7 @@ const SHOWN = 20;
 
 function chip(position: string) {
   const b = positionBucket(position);
-  return b === "yea" ? "v-Yea" : b === "nay" ? "v-Nay" : "v-NV";
+  return b === "yea" ? "yea" : b === "nay" ? "nay" : "nv";
 }
 
 function Row({ vote: v, position }: MemberVoteRow) {
@@ -40,7 +40,7 @@ function Row({ vote: v, position }: MemberVoteRow) {
         {(v.measure || v.description) && <div className="res">{v.question}</div>}
       </td>
       <td>
-        <span className={`vchip ${chip(position)}`}>{position}</span>
+        <span className={`stamp ${chip(position)}`}>{position}</span>
       </td>
       <td>
         {t && decided > 0 ? (
@@ -89,9 +89,11 @@ export default function RecentVotes({ votes, lastName }: { votes: MemberVotes; l
   const pct = rows.length ? Math.round((missed / rows.length) * 100) : 0;
 
   return (
-    <div className="card">
-      <div className="panel">
-        <div className="h3">Recent votes</div>
+    <section className="sec" id="votes" aria-labelledby="votes-h">
+      <div>
+        <h3 className="sec-h" id="votes-h">
+          The roll call
+        </h3>
         {rows.length ? (
           <>
             <p className="panel-note">
@@ -99,8 +101,8 @@ export default function RecentVotes({ votes, lastName }: { votes: MemberVotes; l
               record.
             </p>
             <div className="legend">
-              <span className="vchip v-Yea">Yea</span>
-              <span className="vchip v-Nay">Nay</span>
+              <span className="stamp yea">Yea</span>
+              <span className="stamp nay">Nay</span>
               <span>Bar shows the share of Yea votes in the chamber.</span>
             </div>
             <Table rows={rows.slice(0, SHOWN)} />
@@ -122,6 +124,6 @@ export default function RecentVotes({ votes, lastName }: { votes: MemberVotes; l
           <Provenance data={votes} what="Roll-call votes" />
         </div>
       </div>
-    </div>
+    </section>
   );
 }

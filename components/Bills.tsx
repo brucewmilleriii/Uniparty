@@ -53,9 +53,11 @@ export default function Bills({ bills, lastName, allUrl }: { bills: MemberBillsV
   const pulled = bills.fetchedAt !== null;
 
   return (
-    <div className="card">
-      <div className="panel">
-        <div className="h3">Bills</div>
+    <section className="sec" id="bills" aria-labelledby="bills-h">
+      <div>
+        <h3 className="sec-h" id="bills-h">
+          Bills
+        </h3>
         {!pulled ? (
           <p className="panel-note">
             Bills haven’t been pulled from Congress.gov yet. They appear here after the first daily refresh. Until then,{" "}
@@ -106,6 +108,6 @@ export default function Bills({ bills, lastName, allUrl }: { bills: MemberBillsV
           <Provenance data={bills} what="Bills" />
         </div>
       </div>
-    </div>
+    </section>
   );
 }
