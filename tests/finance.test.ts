@@ -4,10 +4,12 @@ import { describe, expect, it } from "vitest";
 import roster from "@/data/roster.json";
 import financeSnapshot from "@/data/finance.json";
 import {
+  campaignFromRow,
   candidateTotalsUrl,
   candidatesTotalsUrl,
   fecCycle,
   isCongressionalId,
+  memberFinanceStatus,
   parseCandidateTotals,
   readBatch,
   receiptParts,
@@ -162,6 +164,43 @@ describe("toMemberFinance", () => {
   });
 });
 
+describe("memberFinanceStatus", () => {
+  const house = () => parse("H8CA05035").totals!;
+  const senate = () => parse("S4VT00033").totals!;
+
+  it("only says a member filed nothing when the last pull covered them", () => {
+    const m = { chamber: "house" as const, fecIds: ["H8CA05035"] };
+    expect(memberFinanceStatus(m, { campaigns: [], fetchedAt })).toEqual({ status: "ok", campaigns: [] });
+    expect(memberFinanceStatus(m, undefined)).toEqual({ status: "not-covered", campaigns: [] });
+  });
+
+  it("tells apart a member with no House or Senate FEC id", () => {
+    expect(memberFinanceStatus({ chamber: "house", fecIds: [] }, undefined).status).toBe("no-ids");
+    expect(memberFinanceStatus({ chamber: "senate", fecIds: ["P60007168"] }, undefined).status).toBe("no-ids");
+  });
+
+  it("puts the seat's campaign first", () => {
+    const r = memberFinanceStatus({ chamber: "senate", fecIds: ["H8VT01016", "S4VT00033"] }, { campaigns: [house(), senate()], fetchedAt });
+    expect(r.campaigns.map((c) => c.candidateId)).toEqual(["S4VT00033", "H8CA05035"]);
+  });
+});
+
+describe("campaignFromRow", () => {
+  it("reads a Supabase row, whose numeric columns arrive as strings, back to the same campaign", () => {
+    const c = parse("H8CA05035").totals!;
+    const row: Record<string, unknown> = {
+      candidate_id: c.candidateId, cycle: c.cycle, bioguide_id: "P000197", office: c.office, election_year: c.electionYear,
+      coverage_start: c.coverageStart, coverage_end: c.coverageEnd, last_report: c.lastReport,
+      receipts: "2467978.64", disbursements: "4161736.27", cash_on_hand: "384308.83", debts: "0.00",
+      individual_itemized: "808796.43", individual_unitemized: "1411326.97", party_committees: "0.00", other_committees: "33000.00",
+      candidate_contributions: "0.00", candidate_loans: "0.00", other_loans: "0.00", transfers_in: "141138.40", other_receipts: "73716.84",
+      page_url: c.pageUrl, source_url: c.sourceUrl, sha256: c.sha256, fetched_at: c.fetchedAt,
+    };
+    expect(campaignFromRow(row)).toEqual(c);
+    expect(() => campaignFromRow({ ...row, receipts: null })).toThrow(/receipts is not a number/);
+  });
+});
+
 describe("validateFinanceSnapshot", () => {
   const build = (): FinanceSnapshot => {
     const t = (id: string) => parse(id).totals!;
@@ -200,6 +239,15 @@ describe("validateFinanceSnapshot", () => {
     expect(validateFinanceSnapshot(snap, ids, prev).join()).toMatch(/reports now end 2026-06-30, earlier than 2026-09-30/);
     prev.provenance.cycle = 2024;
     expect(validateFinanceSnapshot(snap, ids, prev)).toEqual([]);
+  });
+
+  it("rejects a campaign that had reports at the last pull and has none now, unless its member left", () => {
+    const prev = build();
+    const snap = build();
+    snap.members.K000367.campaigns = [];
+    expect(validateFinanceSnapshot(snap, ids, prev).join()).toMatch(/K000367: S6MN00267 had 2025–2026 reports at the last pull but none now/);
+    delete snap.members.K000367;
+    expect(validateFinanceSnapshot(snap, ["P000197", "S000033"], prev)).toEqual([]);
   });
 
   it("rejects an API key in a stored URL and a record with no source", () => {

@@ -9,7 +9,7 @@ const OFFICE = { H: "House", S: "Senate" } as const;
 /** A member's campaign money for the cycle: totals, where it came from, and any other campaigns they run. */
 export default function Money({ finance, lastName, allUrl }: { finance: MemberFinanceView; lastName: string; allUrl: string }) {
   const cycle = cycleLabel(finance.cycle);
-  const [main, ...others] = finance.campaigns ?? [];
+  const [main, ...others] = finance.campaigns;
   const pulled = finance.fetchedAt !== null;
 
   return (
@@ -29,11 +29,18 @@ export default function Money({ finance, lastName, allUrl }: { finance: MemberFi
             see {lastName}’s filings on fec.gov ↗
           </a>
         </p>
-      ) : finance.campaigns === null ? (
+      ) : finance.status === "no-ids" ? (
         <p className="panel-note">
           The FEC has no candidate record linked to {lastName}, which is usual for members appointed or elected very recently.{" "}
           <a href={allUrl} target="_blank" rel="noopener">
             Search fec.gov ↗
+          </a>
+        </p>
+      ) : finance.status === "not-covered" ? (
+        <p className="panel-note">
+          {lastName} joined after the last pull from the FEC, so their campaign money appears here after the next daily refresh. Until then,{" "}
+          <a href={allUrl} target="_blank" rel="noopener">
+            see their filings on fec.gov ↗
           </a>
         </p>
       ) : !main ? (

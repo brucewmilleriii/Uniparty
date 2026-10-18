@@ -221,6 +221,9 @@ export async function writeFinanceToSupabase(url: string, serviceKey: string, sn
   );
   const up = await db.from("campaign_totals").upsert(rows, { onConflict: "candidate_id,cycle" });
   if (up.error) await fail("campaign_totals upsert", up.error.message);
+  const coverage = Object.entries(snap.members).map(([bioguide_id, m]) => ({ bioguide_id, cycle: snap.provenance.cycle, fetched_at: m.fetchedAt }));
+  const cov = await db.from("finance_coverage").upsert(coverage, { onConflict: "bioguide_id,cycle" });
+  if (cov.error) await fail("finance_coverage upsert", cov.error.message);
 
   await db.from("ingest_runs").insert({
     source: "finance",

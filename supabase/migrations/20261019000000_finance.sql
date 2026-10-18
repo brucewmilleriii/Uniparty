@@ -32,5 +32,16 @@ create table if not exists campaign_totals (
 );
 create index if not exists campaign_totals_member_idx on campaign_totals (bioguide_id, cycle);
 
+-- Which members each cycle's latest pull covered, so a member with no rows can be told
+-- apart from one the pull never reached (say, sworn in since).
+create table if not exists finance_coverage (
+  bioguide_id text not null,
+  cycle       integer not null,
+  fetched_at  timestamptz not null,
+  primary key (bioguide_id, cycle)
+);
+
 alter table campaign_totals enable row level security;
+alter table finance_coverage enable row level security;
 create policy "public read campaign totals" on campaign_totals for select using (true);
+create policy "public read finance coverage" on finance_coverage for select using (true);

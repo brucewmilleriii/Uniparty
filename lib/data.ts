@@ -4,7 +4,7 @@ import snapshot from "@/data/roster.json";
 import billsSnapshot from "@/data/bills.json";
 import votesSnapshot from "@/data/votes.json";
 import financeSnapshot from "@/data/finance.json";
-import { isCongressionalId, toMemberFinance } from "@/lib/ingest/finance";
+import { campaignFromRow, isCongressionalId, memberFinanceStatus, type MemberFinanceStatus } from "@/lib/ingest/finance";
 import { compareVotes } from "@/lib/ingest/votes";
 import { partyMajority, type Side } from "@/lib/summary";
 import type { Bill, BillsSnapshot, CampaignTotals, FinanceSnapshot, Member, RosterSnapshot, Vote, VotesSnapshot } from "@/lib/types";
@@ -276,8 +276,13 @@ export function billsStatus() {
 export interface MemberFinanceView {
   /** Two-year cycle, named for its even year. */
   cycle: number;
-  /** Null when the member has no FEC candidate id, or wasn't in the last pull. The seat's campaign comes first. */
-  campaigns: CampaignTotals[] | null;
+  /**
+   * "ok": the last pull covered this member, and `campaigns` lists what it found (the seat's campaign first;
+   * empty when nothing was filed). "no-ids": the roster links no House or Senate FEC candidate id to them.
+   * "not-covered": they have ids but the last pull didn't include them (they joined the roster since).
+   */
+  status: MemberFinanceStatus;
+  campaigns: CampaignTotals[];
   source: string;
   sourceHome: string;
   fetchedAt: string | null;
@@ -287,47 +292,23 @@ const localFinance = financeSnapshot as unknown as FinanceSnapshot;
 
 function financeFromSnapshot(m: Member): MemberFinanceView {
   const { cycle, fetchedAt, source, sourceHome } = localFinance.provenance;
-  return { cycle, campaigns: localFinance.members[m.bioguideId]?.campaigns ?? null, source, sourceHome, fetchedAt };
+  return { cycle, ...memberFinanceStatus(m, localFinance.members[m.bioguideId]), source, sourceHome, fetchedAt };
 }
 
 async function financeFromSupabase(m: Member, url: string, key: string): Promise<MemberFinanceView> {
   const db = createClient(url, key, { auth: { persistSession: false } });
   const { cycle, source, sourceHome } = localFinance.provenance;
-  const [rows, run] = await Promise.all([
-    db.from("campaign_totals").select("*").eq("bioguide_id", m.bioguideId).eq("cycle", cycle),
+  const ids = m.fecIds.filter(isCongressionalId);
+  const [rows, covered, run] = await Promise.all([
+    // Only the member's current ids, so a campaign since unlinked from them isn't shown.
+    ids.length ? db.from("campaign_totals").select("*").eq("bioguide_id", m.bioguideId).eq("cycle", cycle).in("candidate_id", ids) : { data: [], error: null },
+    db.from("finance_coverage").select("fetched_at").eq("bioguide_id", m.bioguideId).eq("cycle", cycle).maybeSingle(),
     db.from("ingest_runs").select("fetched_at").eq("source", "finance").eq("status", "ok").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (rows.error) throw new Error(`Supabase campaign_totals: ${rows.error.message}`);
-  const fetchedAt = run.data?.fetched_at ?? null;
-  const campaigns: CampaignTotals[] = rows.data.map((r) => ({
-    candidateId: r.candidate_id,
-    office: r.office,
-    electionYear: r.election_year,
-    cycle: r.cycle,
-    coverageStart: r.coverage_start,
-    coverageEnd: r.coverage_end,
-    lastReport: r.last_report,
-    // Postgres numerics arrive as strings.
-    receipts: Number(r.receipts),
-    disbursements: Number(r.disbursements),
-    cashOnHand: Number(r.cash_on_hand),
-    debts: Number(r.debts),
-    individualItemized: Number(r.individual_itemized),
-    individualUnitemized: Number(r.individual_unitemized),
-    partyCommittees: Number(r.party_committees),
-    otherCommittees: Number(r.other_committees),
-    candidateContributions: Number(r.candidate_contributions),
-    candidateLoans: Number(r.candidate_loans),
-    otherLoans: Number(r.other_loans),
-    transfersIn: Number(r.transfers_in),
-    otherReceipts: Number(r.other_receipts),
-    pageUrl: r.page_url,
-    sourceUrl: r.source_url,
-    sha256: r.sha256,
-    fetchedAt: r.fetched_at,
-  }));
-  const known = fetchedAt !== null && m.fecIds.some(isCongressionalId);
-  return { cycle, campaigns: known ? toMemberFinance(m, campaigns, fetchedAt).campaigns : null, source, sourceHome, fetchedAt };
+  if (covered.error) throw new Error(`Supabase finance_coverage: ${covered.error.message}`);
+  const entry = covered.data ? { campaigns: rows.data.map(campaignFromRow), fetchedAt: covered.data.fetched_at } : undefined;
+  return { cycle, ...memberFinanceStatus(m, entry), source, sourceHome, fetchedAt: run.data?.fetched_at ?? null };
 }
 
 /** A member's campaign money for the current two-year cycle, from the FEC. */

@@ -29,7 +29,7 @@ export default async function MemberPage({ params }: Props) {
   const { member: m, roster } = await getMember(id);
   if (!m) notFound();
   const [votes, bills, finance] = await Promise.all([getMemberVotes(m), getMemberBills(m), getMemberFinance(m)]);
-  const money = finance.campaigns?.[0];
+  const money = finance.campaigns[0];
 
   const L = sourceLinks(m);
   const now = new Date();

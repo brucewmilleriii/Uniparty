@@ -261,10 +261,60 @@ export function toMemberFinance(m: Pick<Member, "chamber">, campaigns: CampaignT
   };
 }
 
+export type MemberFinanceStatus = "ok" | "no-ids" | "not-covered";
+
+/**
+ * What can be said about a member's money, given the last pull's entry for them (undefined
+ * when the pull didn't include them): only a member the pull covered can be said to have filed nothing.
+ */
+export function memberFinanceStatus(
+  m: Pick<Member, "chamber" | "fecIds">,
+  entry: MemberFinance | undefined,
+): { status: MemberFinanceStatus; campaigns: CampaignTotals[] } {
+  if (!m.fecIds.some(isCongressionalId)) return { status: "no-ids", campaigns: [] };
+  if (!entry) return { status: "not-covered", campaigns: [] };
+  return { status: "ok", campaigns: toMemberFinance(m, entry.campaigns, entry.fetchedAt).campaigns };
+}
+
+/** A campaign_totals row from Supabase, where numeric columns arrive as strings. */
+export function campaignFromRow(r: Record<string, unknown>): CampaignTotals {
+  const n = (k: string) => {
+    const v = r[k] === null || r[k] === "" ? NaN : Number(r[k]);
+    if (!Number.isFinite(v)) throw new Error(`campaign_totals ${String(r.candidate_id)}: ${k} is not a number (${JSON.stringify(r[k])})`);
+    return v;
+  };
+  return {
+    candidateId: String(r.candidate_id),
+    office: r.office === "S" ? "S" : "H",
+    electionYear: r.election_year === null ? null : n("election_year"),
+    cycle: n("cycle"),
+    coverageStart: String(r.coverage_start),
+    coverageEnd: String(r.coverage_end),
+    lastReport: (r.last_report as string | null) ?? null,
+    receipts: n("receipts"),
+    disbursements: n("disbursements"),
+    cashOnHand: n("cash_on_hand"),
+    debts: n("debts"),
+    individualItemized: n("individual_itemized"),
+    individualUnitemized: n("individual_unitemized"),
+    partyCommittees: n("party_committees"),
+    otherCommittees: n("other_committees"),
+    candidateContributions: n("candidate_contributions"),
+    candidateLoans: n("candidate_loans"),
+    otherLoans: n("other_loans"),
+    transfersIn: n("transfers_in"),
+    otherReceipts: n("other_receipts"),
+    pageUrl: String(r.page_url),
+    sourceUrl: String(r.source_url),
+    sha256: String(r.sha256),
+    fetchedAt: String(r.fetched_at),
+  };
+}
+
 /**
  * Whole-snapshot checks run before writing: enough members have reports to rule out
  * a partial source, every record is traceable, no candidate is credited to two members,
- * and no committee's reports went backwards in time since the last good pull.
+ * and no campaign's reports went backwards or disappeared since the last good pull.
  */
 export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: string[], previous: FinanceSnapshot | null): string[] {
   const errors: string[] = [];
@@ -275,8 +325,10 @@ export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: s
 
   if (snap.sources.some((s) => !/^[0-9a-f]{64}$/.test(s.sha256) || !s.url.startsWith(API_BASE))) errors.push("A batch source has no hash or URL");
   const owner = new Map<string, string>();
-  const prevEnd = new Map<string, string>();
-  if (previous?.provenance.cycle === cycle) for (const m of Object.values(previous.members)) for (const c of m.campaigns) prevEnd.set(c.candidateId, c.coverageEnd);
+  // Within one cycle a campaign's reports only accumulate, so compare with the last good pull.
+  const prevEnd = new Map<string, { member: string; end: string }>();
+  if (previous?.provenance.cycle === cycle)
+    for (const [id, m] of Object.entries(previous.members)) for (const c of m.campaigns) prevEnd.set(c.candidateId, { member: id, end: c.coverageEnd });
 
   for (const [id, m] of Object.entries(snap.members)) {
     for (const c of m.campaigns) {
@@ -286,10 +338,13 @@ export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: s
       const other = owner.get(c.candidateId);
       if (other) errors.push(`${c.candidateId} is credited to both ${other} and ${id}`);
       owner.set(c.candidateId, id);
-      const before = prevEnd.get(c.candidateId);
+      const before = prevEnd.get(c.candidateId)?.end;
       if (before && c.coverageEnd < before) errors.push(`${id}: ${c.candidateId} reports now end ${c.coverageEnd}, earlier than ${before} at the last pull`);
     }
   }
+  const current = new Set(membersWithIds);
+  for (const [candidateId, { member }] of prevEnd)
+    if (current.has(member) && !owner.has(candidateId)) errors.push(`${member}: ${candidateId} had ${cycle - 1}–${cycle} reports at the last pull but none now`);
   const urls = [...snap.sources.map((s) => s.url), ...Object.values(snap.members).flatMap((m) => m.campaigns.map((c) => c.sourceUrl))];
   if (urls.some((u) => /api_key/i.test(u))) errors.push("An API key is in a stored URL");
   return errors;
