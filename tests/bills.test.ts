@@ -12,6 +12,7 @@ import {
   readLegislationPage,
   readWholeList,
   toMemberBills,
+  unconfirmedError,
   validateBillsSnapshot,
   type LegislationPage,
 } from "@/lib/ingest/bills";
@@ -242,6 +243,9 @@ describe("readWholeList", () => {
     let n = 0;
     const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, passes.length - 1)], 250).readPage);
     expect(list!.confirmed).toBe(false);
+    // The merged {A, X, B} matches the count, so the parser passes it; only the unconfirmed error blocks it.
+    expect(parse(list!.pages).errors).toEqual([]);
+    expect(unconfirmedError("T000001 sponsored", list!)).toMatch(/complete but not confirmed after 12 reads/);
     // A later read that returns Y starts over and settles on the real list.
     const later = [...passes.slice(0, 3), [y, a, b], [a, y, b]];
     let m = 0;
@@ -278,6 +282,10 @@ describe("readWholeList", () => {
     let n = 0;
     const list = await readWholeList("T000001 sponsored", server(() => passes[Math.min(n++, 1)], 250).readPage, 2);
     expect(list!.confirmed).toBe(false);
+    expect(unconfirmedError("T000001 sponsored", list!)).toMatch(/complete but not confirmed after 2 reads/);
+    const short = { pages: [{ items: [item(1)], count: 3, next: null }], reads: 12, confirmed: false };
+    expect(unconfirmedError("T000001 sponsored", short)).toMatch(/still short after 12 reads \(1 of 3 items\)/);
+    expect(unconfirmedError("T000001 sponsored", { ...short, confirmed: true })).toBeNull();
   });
 
   it("returns null for a member with no list, but throws on a 404 partway through", async () => {

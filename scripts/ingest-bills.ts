@@ -28,12 +28,12 @@ import {
   checkCosponsor,
   checkSponsor,
   cosponsorsNext,
-  itemKey,
   memberLegislationUrl,
   parseLegislation,
   readLegislationPage,
   readWholeList,
   toMemberBills,
+  unconfirmedError,
   validateBillsSnapshot,
   type LegislationKind,
   type LegislationPage,
@@ -172,15 +172,8 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
   if (!list) return null;
   if (list.reads > 1) reReadLists++;
   extraReads += list.reads - 1;
-  if (!list.confirmed) {
-    const distinct = new Set(list.pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
-    const count = list.pages[0]?.count ?? 0;
-    errors.push(
-      distinct < count
-        ? `${id} ${kind}: still short after ${list.reads} reads (${distinct} of ${count} items)`
-        : `${id} ${kind}: complete but not confirmed after ${list.reads} reads`,
-    );
-  }
+  const unconfirmed = unconfirmedError(`${id} ${kind}`, list);
+  if (unconfirmed) errors.push(unconfirmed);
   sources.push(...list.sources);
   return list.pages;
 }

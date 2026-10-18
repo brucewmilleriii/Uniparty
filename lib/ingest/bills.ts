@@ -146,6 +146,20 @@ export async function readWholeList<S>(
 }
 
 /**
+ * The error for a list readWholeList couldn't confirm, or null if it was confirmed. A
+ * complete-but-unconfirmed list passes parseLegislation's count checks, so this error is
+ * what keeps it from being published; callers must add it to their errors.
+ */
+export function unconfirmedError(at: string, list: { pages: LegislationPage[]; reads: number; confirmed: boolean }): string | null {
+  if (list.confirmed) return null;
+  const distinct = new Set(list.pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
+  const count = list.pages[0]?.count ?? 0;
+  return distinct < count
+    ? `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)`
+    : `${at}: complete but not confirmed after ${list.reads} reads`;
+}
+
+/**
  * What identifies a list item across reads: its API URL, or for one without a URL
  * (seen on old records) its Congress, type and number. Empty if it has neither.
  */
