@@ -76,7 +76,10 @@ export interface BatchRow {
   coverageEnd: string;
 }
 
-/** Read /candidates/totals/: every row must be one of the candidates asked for, in the cycle, at most once. */
+/**
+ * Read /candidates/totals/: every row must be one of the candidates asked for, in the cycle, at most once.
+ * Only candidates with reports in the cycle are returned.
+ */
 export function readBatch(body: unknown, asked: string[], cycle: number): { rows: BatchRow[]; errors: string[] } {
   const errors: string[] = [];
   const rows: BatchRow[] = [];
@@ -91,6 +94,13 @@ export function readBatch(body: unknown, asked: string[], cycle: number): { rows
     if (seen.has(id)) errors.push(`candidates/totals lists ${id} twice`);
     seen.add(id);
     if (Number(r.cycle) !== cycle) errors.push(`candidates/totals row for ${id} is for cycle ${String(r.cycle)}, not ${cycle}`);
+    // Old candidate ids (a member's earlier House run, say) come back as a placeholder row with
+    // no coverage dates and nothing filed; those campaigns have no reports this cycle.
+    const money = [r.receipts, r.disbursements, r.cash_on_hand_end_period].map(amount);
+    if (r.coverage_end_date === null) {
+      if (money.some((m) => m !== 0)) errors.push(`candidates/totals row for ${id} has money but no coverage dates`);
+      continue;
+    }
     rows.push({
       candidateId: id,
       receipts: amount(r.receipts),

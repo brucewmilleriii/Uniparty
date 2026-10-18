@@ -66,6 +66,14 @@ describe("readBatch", () => {
     expect(batchRow("H8CA05035")).toMatchObject({ receipts: 2467978.64, cashOnHand: 384308.83, coverageEnd: "2026-09-30" });
   });
 
+  it("leaves out old candidate ids that the FEC lists with nothing filed this cycle", () => {
+    const body = fixture("candidates-totals-2026-no-reports.json");
+    expect(readBatch(body, ["H8WI00018", "H6IN03229"], 2026)).toEqual({ rows: [], errors: [] });
+    const [r] = body.results as Record<string, unknown>[];
+    const odd = { ...body, results: [{ ...r, receipts: 500 }], pagination: { count: 1, pages: 1 } };
+    expect(readBatch(odd, ["H6IN03229"], 2026).errors.join()).toMatch(/H6IN03229 has money but no coverage dates/);
+  });
+
   it("rejects rows nobody asked for, repeats, the wrong cycle and incomplete pages", () => {
     const body = fixture("candidates-totals-2026.json");
     const rows = body.results as Record<string, unknown>[];
