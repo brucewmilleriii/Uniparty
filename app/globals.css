@@ -163,3 +163,8 @@ body{margin:0}
 .legend .vchip{min-width:0}
 .votes .vm{min-width:220px}
 @media (max-width:600px){.votes th:nth-child(2),.votes td:nth-child(2){display:none}.votes .vm{min-width:150px}.votes .tally .t{width:32px}}
+.stats2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px;max-width:420px}
+.h4{font-size:12.5px;font-weight:700;margin:18px 0 6px;color:var(--ink-2)}
+.bills .bt{min-width:240px}
+.bills .ba{min-width:180px}
+@media (max-width:600px){.bills th:nth-child(2),.bills td:nth-child(2){display:none}.bills .bt{min-width:160px}.bills .ba{min-width:140px}}

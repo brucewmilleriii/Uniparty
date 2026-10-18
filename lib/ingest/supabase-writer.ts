@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { RosterSnapshot, Vote } from "@/lib/types";
+import type { BillsSnapshot, RosterSnapshot, Vote } from "@/lib/types";
 
 /**
  * Upsert a validated roster into Supabase and record the run in ingest_runs.
@@ -111,4 +111,68 @@ export async function writeVotesToSupabase(url: string, serviceKey: string, vote
     source_files: votes.map((v) => ({ url: v.sourceUrl, sha256: v.sha256 })),
   });
   return rows.length;
+}
+
+/**
+ * Upsert bills, each member's recent sponsored and cosponsored links, and their
+ * per-Congress counts, and record the run. Links that have left the snapshot's
+ * window stay in the database as history.
+ */
+export async function writeBillsToSupabase(url: string, serviceKey: string, snap: BillsSnapshot): Promise<number> {
+  const db = createClient(url, serviceKey, { auth: { persistSession: false } });
+  const { fetchedAt, congress } = snap.provenance;
+
+  const fail = async (step: string, message: string): Promise<never> => {
+    await db.from("ingest_runs").insert({ source: "bills", fetched_at: fetchedAt, status: "failed", error: `${step}: ${message}` });
+    throw new Error(`Supabase ${step} failed: ${message}`);
+  };
+
+  const bills = Object.values(snap.bills).map((b) => ({
+    id: b.id,
+    congress: b.congress,
+    type: b.type,
+    number: b.number,
+    label: b.label,
+    title: b.title,
+    policy_area: b.policyArea,
+    latest_action_date: b.latestAction?.date ?? null,
+    latest_action_text: b.latestAction?.text ?? null,
+    page_url: b.pageUrl,
+    source_url: b.sourceUrl,
+    fetched_at: b.fetchedAt,
+  }));
+  for (let i = 0; i < bills.length; i += 2000) {
+    const res = await db.from("bills").upsert(bills.slice(i, i + 2000), { onConflict: "id" });
+    if (res.error) await fail("bills upsert", res.error.message);
+  }
+
+  const members = Object.entries(snap.members);
+  const links = members.flatMap(([bioguide_id, m]) => [
+    ...m.sponsored.map((l) => ({ bioguide_id, bill_id: l.billId, role: "sponsor", link_date: l.date })),
+    ...m.cosponsored.map((l) => ({ bioguide_id, bill_id: l.billId, role: "cosponsor", link_date: l.date })),
+  ]);
+  for (let i = 0; i < links.length; i += 5000) {
+    const res = await db.from("member_bills").upsert(links.slice(i, i + 5000), { onConflict: "bioguide_id,bill_id,role" });
+    if (res.error) await fail("member_bills upsert", res.error.message);
+  }
+
+  const counts = members.map(([bioguide_id, m]) => ({
+    bioguide_id,
+    congress,
+    sponsored_count: m.sponsoredCount,
+    cosponsored_count: m.cosponsoredCount,
+    source_files: m.sources,
+    fetched_at: m.fetchedAt,
+  }));
+  const up = await db.from("member_bill_counts").upsert(counts, { onConflict: "bioguide_id,congress" });
+  if (up.error) await fail("member_bill_counts upsert", up.error.message);
+
+  await db.from("ingest_runs").insert({
+    source: "bills",
+    fetched_at: fetchedAt,
+    status: "ok",
+    record_count: bills.length,
+    source_files: members.flatMap(([, m]) => m.sources),
+  });
+  return members.length;
 }

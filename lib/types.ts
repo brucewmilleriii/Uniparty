@@ -110,3 +110,59 @@ export interface VotesSnapshot {
   };
   votes: Vote[];
 }
+
+/** A bill or resolution, as listed by Congress.gov. */
+export interface Bill {
+  /** "119-s-5285" */
+  id: string;
+  congress: number;
+  /** Congress.gov type code: HR, S, HRES, SRES, HJRES, SJRES, HCONRES, SCONRES. */
+  type: string;
+  number: number;
+  /** "S. 5285" */
+  label: string;
+  title: string;
+  /** CRS policy area; null until CRS assigns one. */
+  policyArea: string | null;
+  latestAction: { date: string; text: string } | null;
+  /** The bill's page on Congress.gov. */
+  pageUrl: string;
+  /** The Congress.gov API record it was read from. */
+  sourceUrl: string;
+  fetchedAt: string;
+}
+
+/** A member's link to a bill. `date` is when the bill was introduced (sponsor) or when the member signed on (cosponsor). */
+export interface BillLink {
+  billId: string;
+  date: string;
+}
+
+export interface MemberBills {
+  /** Bills and resolutions sponsored in the current Congress (amendments are not counted). */
+  sponsoredCount: number;
+  cosponsoredCount: number;
+  /** Most recent first, up to the snapshot's window. */
+  sponsored: BillLink[];
+  cosponsored: BillLink[];
+  /** Every Congress.gov API page read for this member, with its SHA-256. */
+  sources: { url: string; sha256: string }[];
+  fetchedAt: string;
+}
+
+export interface BillsSnapshot {
+  provenance: {
+    source: string;
+    sourceHome: string;
+    /** Null until the first successful pull. */
+    fetchedAt: string | null;
+    /** The Congress the counts cover. */
+    congress: number;
+    /** How many recent bills are kept per member for each of sponsored and cosponsored. */
+    window: number;
+  };
+  /** Keyed by bill id. */
+  bills: Record<string, Bill>;
+  /** Keyed by bioguide id. */
+  members: Record<string, MemberBills>;
+}

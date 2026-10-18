@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Bills from "@/components/Bills";
 import Provenance from "@/components/Provenance";
 import RecentVotes from "@/components/RecentVotes";
-import { getMember, getMemberVotes, getRoster } from "@/lib/data";
+import { getMember, getMemberBills, getMemberVotes, getRoster } from "@/lib/data";
 import { PARTY, STATES, ageOn, roleTitle, sourceLinks } from "@/lib/format";
 
 export const revalidate = 3600;
@@ -24,7 +25,7 @@ export default async function MemberPage({ params }: Props) {
   const { id } = await params;
   const { member: m, roster } = await getMember(id);
   if (!m) notFound();
-  const votes = await getMemberVotes(m);
+  const [votes, bills] = await Promise.all([getMemberVotes(m), getMemberBills(m)]);
 
   const L = sourceLinks(m);
   const now = new Date();
@@ -84,6 +85,8 @@ export default async function MemberPage({ params }: Props) {
 
       <RecentVotes votes={votes} lastName={m.lastName} />
 
+      <Bills bills={bills} lastName={m.lastName} allUrl={L.bills} />
+
       <div className="card">
         <div className="panel">
           <div className="h3">Committees</div>
@@ -109,14 +112,10 @@ export default async function MemberPage({ params }: Props) {
         <div className="empty">
           <h2>More records for {m.lastName}</h2>
           <p>
-            Bills, campaign money and stock trades are being connected next. Until then, these go straight to the official
+            Campaign money and stock trades are being connected next. Until then, these go straight to the official
             record for {STATES[m.state] ?? m.state}’s {m.chamber === "senate" ? "senator" : "representative"}:
           </p>
           <div className="srclinks">
-            <a href={L.bills} target="_blank" rel="noopener">
-              <b>Bills sponsored ↗</b>
-              <span>Congress.gov</span>
-            </a>
             <a href={L.fec} target="_blank" rel="noopener">
               <b>Campaign money ↗</b>
               <span>FEC candidate summary</span>

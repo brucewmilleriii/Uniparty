@@ -1,0 +1,119 @@
+{
+    "pagination": {
+        "count": 1433,
+        "next": "https://api.congress.gov/v3/member/K000367/sponsored-legislation?offset=8&limit=8&format=json"
+    },
+    "request": {
+        "bioguideId": "k000367",
+        "contentType": "application/json",
+        "format": "json"
+    },
+    "sponsoredLegislation": [
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-24",
+            "latestAction": {
+                "actionDate": "2026-09-24",
+                "text": "Referred to the Committee on Health, Education, Labor, and Pensions. (text: CR S5010)"
+            },
+            "number": "908",
+            "policyArea": {
+                "name": "Education"
+            },
+            "title": "A resolution supporting the designation of the week of September 21 through September 25, 2026, as \"National Hazing Awareness Week\".",
+            "type": "SRES",
+            "url": "https://api.congress.gov/v3/bill/119/sres/908?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-09-16",
+            "latestAction": {
+                "actionDate": "2026-09-16",
+                "text": "Referred to the Committee on the Judiciary. (text: CR S4760)"
+            },
+            "number": "858",
+            "policyArea": {
+                "name": "Education"
+            },
+            "title": "A resolution honoring the life and legacy of the late Constance Benjamin Clery.",
+            "type": "SRES",
+            "url": "https://api.congress.gov/v3/bill/119/sres/858?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-08-06",
+            "latestAction": {
+                "actionDate": "2026-08-06",
+                "text": "Read twice and referred to the Committee on Finance."
+            },
+            "number": "5285",
+            "policyArea": {
+                "name": "Taxation"
+            },
+            "title": "Visitable Inclusive Tax credits for Accessible Living (VITAL) Act",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/5285?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-08-04",
+            "latestAction": {
+                "actionDate": "2026-08-04",
+                "text": "Read twice and referred to the Committee on Homeland Security and Governmental Affairs."
+            },
+            "number": "5241",
+            "policyArea": {
+                "name": "Government Operations and Politics"
+            },
+            "title": "A bill to designate the facility of the United States Postal Service located at 200 1st Avenue Southeast in Austin, Minnesota, as the \"John Madden Memorial Post Office\".",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/5241?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-07-21",
+            "latestAction": {
+                "actionDate": "2026-07-21",
+                "text": "Read twice and referred to the Committee on Finance."
+            },
+            "number": "5052",
+            "policyArea": {
+                "name": "Health"
+            },
+            "title": "Lainie Jones Comprehensive Cancer Survivorship Act of 2026",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/5052?format=json"
+        },
+        {
+            "congress": 119,
+            "introducedDate": "2026-07-15",
+            "latestAction": {
+                "actionDate": "2026-07-15",
+                "text": "Read twice and referred to the Committee on the Judiciary."
+            },
+            "number": "5007",
+            "policyArea": {
+                "name": "Science, Technology, Communications"
+            },
+            "title": "SEARCH Act of 2026",
+            "type": "S",
+            "url": "https://api.congress.gov/v3/bill/119/s/5007?format=json"
+        },
+        {
+            "amendmentNumber": "6557",
+            "congress": 119,
+            "introducedDate": "2026-06-24",
+            "latestAction": null,
+            "type": null,
+            "url": "https://api.congress.gov/v3/amendment/119/samdt/6557?format=json"
+        },
+        {
+            "amendmentNumber": "6294",
+            "congress": 119,
+            "introducedDate": "2026-06-24",
+            "latestAction": null,
+            "type": null,
+            "url": "https://api.congress.gov/v3/amendment/119/samdt/6294?format=json"
+        }
+    ]
+}

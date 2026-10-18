@@ -1,0 +1,91 @@
+{
+    "pagination": {
+        "count": 199,
+        "next": "https://api.congress.gov/v3/member/P000197/sponsored-legislation?offset=5&limit=5&format=json"
+    },
+    "request": {
+        "bioguideId": "p000197",
+        "contentType": "application/json",
+        "format": "json"
+    },
+    "sponsoredLegislation": [
+        {
+            "congress": 118,
+            "introducedDate": "2023-09-29",
+            "latestAction": {
+                "actionDate": "2023-09-29",
+                "actionTime": "12:08:46",
+                "text": "Motion to reconsider laid on the table Agreed to without objection."
+            },
+            "number": "742",
+            "policyArea": {
+                "name": "Congress"
+            },
+            "title": "Expressing the profound sorrow of the House of Representatives on the death of the Honorable Dianne Goldman Berman Feinstein.",
+            "type": "HRES",
+            "url": "https://api.congress.gov/v3/bill/118/hres/742?format=json"
+        },
+        {
+            "congress": 118,
+            "introducedDate": "2023-07-27",
+            "latestAction": {
+                "actionDate": "2023-07-27",
+                "text": "Referred to the House Committee on Education and the Workforce."
+            },
+            "number": "621",
+            "policyArea": {
+                "name": "Arts, Culture, Religion"
+            },
+            "title": "Expressing support for the designation of August 3, 2023, as \"Tony Bennett Day\".",
+            "type": "HRES",
+            "url": "https://api.congress.gov/v3/bill/118/hres/621?format=json"
+        },
+        {
+            "congress": 117,
+            "introducedDate": "2022-11-29",
+            "latestAction": {
+                "actionDate": "2022-12-01",
+                "text": "Message on Senate action sent to the House."
+            },
+            "number": "118",
+            "policyArea": {
+                "name": "Congress"
+            },
+            "title": "Authorizing the use of the rotunda of the Capitol for a ceremony to present Congressional Gold Medals to the United States Capitol Police and others who protected the Capitol on January 6, 2021.",
+            "type": "HCONRES",
+            "url": "https://api.congress.gov/v3/bill/117/hconres/118?format=json"
+        },
+        {
+            "congress": 117,
+            "introducedDate": "2021-09-10",
+            "latestAction": {
+                "actionDate": "2021-09-10",
+                "actionTime": "11:35:26",
+                "text": "Motion to reconsider laid on the table Agreed to without objection."
+            },
+            "number": "626",
+            "policyArea": {
+                "name": "Government Operations and Politics"
+            },
+            "title": "Expressing the sense of the House of Representatives regarding the terrorist attacks launched against the United States on September 11, 2001, on the 20th anniversary of that date.",
+            "type": "HRES",
+            "url": "https://api.congress.gov/v3/bill/117/hres/626?format=json"
+        },
+        {
+            "congress": 117,
+            "introducedDate": "2021-06-28",
+            "latestAction": {
+                "actionDate": "2021-06-30",
+                "actionTime": "15:48:09",
+                "text": "Motion to reconsider laid on the table Agreed to without objection."
+            },
+            "number": "503",
+            "policyArea": {
+                "name": "Congress"
+            },
+            "title": "Establishing the Select Committee to Investigate the January 6th Attack on the United States Capitol.",
+            "type": "HRES",
+            "url": "https://api.congress.gov/v3/bill/117/hres/503?format=json"
+        }
+    ]
+}
