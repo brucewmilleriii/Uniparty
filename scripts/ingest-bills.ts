@@ -158,7 +158,8 @@ async function pool<T>(items: T[], fn: (item: T) => Promise<void>) {
 const errors: string[] = [];
 const missing: string[] = [];
 
-let reReads = 0;
+let reReadLists = 0;
+let extraReads = 0;
 
 /** Read one member list in full; see readWholeList for how gaps are filled. */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
@@ -168,7 +169,8 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
     return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
   });
   if (!list) return null;
-  reReads += list.reads - 1;
+  if (list.reads > 1) reReadLists++;
+  extraReads += list.reads - 1;
   if (!list.confirmed) errors.push(`${id} ${kind}: couldn't read the same complete list twice in ${list.reads} reads`);
   sources.push(...list.sources);
   return list.pages;
@@ -260,7 +262,7 @@ async function main() {
   }
 
   const total = (k: "sponsoredCount" | "cosponsoredCount") => Object.values(members).reduce((n, m) => n + m[k], 0);
-  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made, ${reReads} lists read again to fill gaps`;
+  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made, ${reReadLists} lists read again to fill gaps (${extraReads} extra reads)`;
   if (check) {
     console.log(`Check passed: ${summary}. Nothing written.`);
     return;
