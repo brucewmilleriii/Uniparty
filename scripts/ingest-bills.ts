@@ -28,6 +28,7 @@ import {
   checkCosponsor,
   checkSponsor,
   cosponsorsNext,
+  itemKey,
   memberLegislationUrl,
   parseLegislation,
   readLegislationPage,
@@ -171,7 +172,15 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
   if (!list) return null;
   if (list.reads > 1) reReadLists++;
   extraReads += list.reads - 1;
-  if (!list.confirmed) errors.push(`${id} ${kind}: couldn't read the same complete list twice in ${list.reads} reads`);
+  if (!list.confirmed) {
+    const distinct = new Set(list.pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
+    const count = list.pages[0]?.count ?? 0;
+    errors.push(
+      distinct < count
+        ? `${id} ${kind}: still short after ${list.reads} reads (${distinct} of ${count} items)`
+        : `${id} ${kind}: complete but not confirmed after ${list.reads} reads`,
+    );
+  }
   sources.push(...list.sources);
   return list.pages;
 }
