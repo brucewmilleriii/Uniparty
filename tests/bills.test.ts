@@ -303,6 +303,8 @@ describe("readWholeList", () => {
     const short = { pages: [{ items: [item(1)], count: 3, next: null }], reads: 12, confirmed: false };
     expect(unconfirmedError("T000001 sponsored", short)).toMatch(/still short after 12 reads \(1 of 3 items\)/);
     expect(unconfirmedError("T000001 sponsored", { ...short, confirmed: true })).toBeNull();
+    const twice = { ...short, pages: [{ items: [item(1), item(1), { congress: 119 }], count: 3, next: null }] };
+    expect(unconfirmedError("T000001 sponsored", twice)).toMatch(/\(1 of 3 items\); 1 without an id; listed twice within a page: \S+/);
   });
 
   it("refuses to keep paging past what the reported count allows", async () => {

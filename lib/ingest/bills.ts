@@ -163,9 +163,13 @@ export function unconfirmedError(at: string, list: { pages: LegislationPage[]; r
   if (list.confirmed) return null;
   const distinct = new Set(list.pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
   const count = list.pages[0]?.count ?? 0;
-  return distinct < count
-    ? `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)`
-    : `${at}: complete but not confirmed after ${list.reads} reads`;
+  if (distinct >= count) return `${at}: complete but not confirmed after ${list.reads} reads`;
+  // A repeat inside one page can't be a page-boundary slip, and an item with no id can't be
+  // counted; name either so a list that stays short says why.
+  const noId = list.pages.reduce((n, p) => n + p.items.filter((i) => !itemKey(i)).length, 0);
+  const inPage = new Set(list.pages.flatMap((p) => p.items.map(itemKey).filter((k, i, ks) => k && ks.indexOf(k) !== i)));
+  const why = [noId ? `${noId} without an id` : "", inPage.size ? `listed twice within a page: ${[...inPage].join(", ")}` : ""].filter(Boolean);
+  return `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)${why.length ? `; ${why.join("; ")}` : ""}`;
 }
 
 /**
