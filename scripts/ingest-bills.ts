@@ -71,6 +71,10 @@ const HOURLY_BUDGET = 4200;
 /** Wait for the key's hourly allowance to recover when fewer calls than this are left. */
 const RESERVE = 400;
 
+if (process.argv.includes("--ids") && !onlyIds?.length) {
+  console.error("--ids needs at least one bioguide id.");
+  process.exit(1);
+}
 if ((memberLimit !== Infinity || onlyIds) && !check) {
   console.error("--members and --ids only work with --check; a partial snapshot would drop everyone else.");
   process.exit(1);
