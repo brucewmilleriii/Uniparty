@@ -189,7 +189,11 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
 
 async function main() {
   const roster = JSON.parse(await readFile(ROSTER, "utf8")) as RosterSnapshot;
-  const ids = onlyIds ?? roster.members.map((m) => m.bioguideId).slice(0, memberLimit);
+  const rosterIds = roster.members.map((m) => m.bioguideId);
+  const ids = onlyIds ?? rosterIds.slice(0, memberLimit);
+  // Named ids are the point of the run, so each one must be read, not tolerated as missing.
+  const notInRoster = onlyIds?.filter((id) => !rosterIds.includes(id)) ?? [];
+  if (notInRoster.length) errors.push(`--ids not in the roster: ${notInRoster.join(", ")}`);
 
   let prev: BillsSnapshot | null = null;
   try {
@@ -226,6 +230,7 @@ async function main() {
     if (++done % 50 === 0) console.log(`  ${done}/${ids.length} members read; ${calls} calls, ${reReadLists} lists read again (${extraReads} extra reads)`);
   });
   console.log(`Read ${done} members for the ${congress}th Congress; ${missing.length} not on Congress.gov${missing.length ? ` (${missing.join(", ")})` : ""}.`);
+  if (onlyIds && missing.length) errors.push(`--ids not found on Congress.gov: ${missing.join(", ")}`);
 
   // Re-read a random sample of bills from their own records.
   const pick = (kind: LegislationKind) =>
