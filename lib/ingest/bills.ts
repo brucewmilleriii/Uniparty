@@ -89,8 +89,8 @@ export const MAX_READS = 12;
  * read (say, one cosponsorship withdrawn and another added, which leaves the count
  * alone); a new item drops the earlier passes and starts over from that one. A pass
  * whose count differs from the earlier ones, or that takes the merged items past the
- * count, also replaces them. An item Congress.gov lists twice is returned in `doubled`
- * and counted once (see below). If the reads run out first, `confirmed` is false and the caller
+ * count, also replaces them. An item Congress.gov lists twice, as its own record confirms,
+ * is returned in `doubled` and counted once (see below). If the reads run out first, `confirmed` is false and the caller
  * must not publish the list. `readPage` returns null on a 404, which on the very
  * first page means the member has no list (null is returned).
  */
@@ -98,6 +98,7 @@ export async function readWholeList<S>(
   at: string,
   readPage: (offset: number, limit: number) => Promise<{ page: LegislationPage; source: S } | null>,
   maxReads = MAX_READS,
+  listsTwice: (key: string) => Promise<boolean> = async () => false,
 ): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean; doubled: string[] } | null> {
   const keysOf = (pages: LegislationPage[]) => new Set(pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean));
   const repeatsIn = (pages: LegislationPage[]) =>
@@ -105,18 +106,22 @@ export async function readWholeList<S>(
   let all: LegislationPage[] = [];
   let kept: S[] = [];
   let reads = 0;
-  // Congress.gov lists some items twice and counts both (D000622's sponsored list has
-  // 118/s/38 twice). A page-boundary slip repeats a different item at each page size, so an
-  // item repeated in every pass, at three or more sizes, is a double listing; the list then
-  // has that many fewer distinct items than its count.
+  // Congress.gov lists some items twice and counts both: S. 38 (118th) names D000622 as its
+  // sponsor twice, so her sponsored list has it twice. An item that repeats in every pass, at
+  // three or more page sizes, is checked with `listsTwice` against its own record; only one
+  // the record confirms is counted once. Anything else repeating stays a gap to fill.
   let repeated = new Set<string>();
   let passes = 0;
-  const doubled = () => (passes >= 3 ? [...repeated] : []);
-  const expected = () => all[0].count - doubled().length;
-  const track = (pages: LegislationPage[], fresh: boolean) => {
+  const checked = new Map<string, boolean>();
+  let doubled: string[] = [];
+  const expected = () => all[0].count - doubled.length;
+  const track = async (pages: LegislationPage[], fresh: boolean) => {
     const r = repeatsIn(pages);
     repeated = fresh ? r : new Set([...repeated].filter((k) => r.has(k)));
     passes = fresh ? 1 : passes + 1;
+    if (passes < 3) return void (doubled = []);
+    for (const k of repeated) if (!checked.has(k)) checked.set(k, await listsTwice(k));
+    doubled = [...repeated].filter((k) => checked.get(k));
   };
   // The distinct items of a complete multi-pass list, and those the confirming passes have returned so far.
   let toConfirm: Set<string> | null = null;
@@ -147,12 +152,12 @@ export async function readWholeList<S>(
       kept = [];
       toConfirm = null;
     }
-    track(pages, all.length === 0);
+    await track(pages, all.length === 0);
     all.push(...pages);
     kept.push(...read);
     if (toConfirm) {
       for (const k of keysOf(pages)) reconfirmed.add(k);
-      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true, doubled: doubled() };
+      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true, doubled };
       continue;
     }
     const consistent = all.every((p) => p.count === all[0].count);
@@ -160,7 +165,7 @@ export async function readWholeList<S>(
     if (consistent && keysOf(all).size > expected()) {
       all = [...pages];
       kept = [...read];
-      track(pages, true);
+      await track(pages, true);
     }
     if (consistent && keysOf(all).size === expected()) {
       if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true, doubled: [] };
@@ -169,7 +174,7 @@ export async function readWholeList<S>(
     }
   }
   // A complete, confirmed list returns from inside the loop; running out of reads means it never was.
-  return { pages: all, sources: kept, reads, confirmed: false, doubled: doubled() };
+  return { pages: all, sources: kept, reads, confirmed: false, doubled };
 }
 
 /**
@@ -321,6 +326,21 @@ export function checkCosponsor(pages: unknown[], link: Pick<ParsedLink, "date"> 
   if (!row) return [`${at}: member is not on the bill's cosponsor list`];
   if (str(row.sponsorshipDate) !== link.date) return [`${at}: bill says signed on ${str(row.sponsorshipDate)}, member list says ${link.date}`];
   return [];
+}
+
+/**
+ * Whether an item's own record names the member twice, which is why Congress.gov lists it
+ * twice: `bodies` is the bill or amendment record for a sponsored item, or the pages of
+ * its cosponsor list for a cosponsored one.
+ */
+export function namesMemberTwice(bodies: unknown[], kind: LegislationKind, bioguideId: string): boolean {
+  const rows = bodies.flatMap((b) => {
+    if (!isObj(b)) return [];
+    const record = isObj(b.bill) ? b.bill : isObj(b.amendment) ? b.amendment : null;
+    const list = kind === "sponsored" ? record?.sponsors : b.cosponsors;
+    return Array.isArray(list) ? list.filter(isObj) : [];
+  });
+  return rows.filter((r) => str(r.bioguideId) === bioguideId).length >= 2;
 }
 
 /** Next page of a bill's cosponsor list, if any. */

@@ -13,6 +13,8 @@ import {
   readLegislationPage,
   readWholeList,
   toMemberBills,
+  MAX_READS,
+  namesMemberTwice,
   unconfirmedError,
   validateBillsSnapshot,
   type LegislationPage,
@@ -225,9 +227,17 @@ describe("readWholeList", () => {
     expect(parse(short!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
   });
 
-  it("accepts an item Congress.gov lists twice on every read, and counts it once", async () => {
-    // As with D000622's sponsored list, which has 118/s/38 twice: the count includes both.
-    const list = await readWholeList("T000001 sponsored", server(() => [...items.slice(0, 29), item(7)]).readPage);
+  it("counts an item once when it repeats on every read and its own record names the member twice", async () => {
+    // As with D000622's sponsored list: S. 38 names her as sponsor twice, and the count includes both.
+    const doubledList = () => [...items.slice(0, 29), item(7)];
+    // Without the record's say-so, the same reads are a gap that never fills (item 30 could be missing).
+    const unchecked = await readWholeList("T000001 sponsored", server(doubledList).readPage);
+    expect(unchecked!.confirmed).toBe(false);
+    expect(unchecked!.doubled).toEqual([]);
+    const asked: string[] = [];
+    const listsTwice = async (key: string) => (asked.push(key), key === item(7).url);
+    const list = await readWholeList("T000001 sponsored", server(doubledList).readPage, MAX_READS, listsTwice);
+    expect(asked).toEqual([item(7).url]);
     expect(list!.confirmed).toBe(true);
     // Three reads establish the double listing and a fourth confirms the list.
     expect(list!.reads).toBe(4);
@@ -319,6 +329,16 @@ describe("readWholeList", () => {
     expect(unconfirmedError("T000001 sponsored", { ...short, confirmed: true })).toBeNull();
     const noId = { ...short, pages: [{ items: [item(1), { congress: 119 }], count: 3, next: null }], doubled: [item(2).url] };
     expect(unconfirmedError("T000001 sponsored", noId)).toMatch(/\(1 of 2 items\); 1 without an id/);
+  });
+
+  it("tells from an item's own record whether it names the member twice", () => {
+    const sponsor = { bioguideId: "D000622" };
+    expect(namesMemberTwice([{ bill: { sponsors: [sponsor, sponsor] } }], "sponsored", "D000622")).toBe(true);
+    expect(namesMemberTwice([{ amendment: { sponsors: [sponsor, sponsor] } }], "sponsored", "D000622")).toBe(true);
+    expect(namesMemberTwice([{ bill: { sponsors: [sponsor] } }], "sponsored", "D000622")).toBe(false);
+    expect(namesMemberTwice([{ cosponsors: [sponsor] }, { cosponsors: [sponsor] }], "cosponsored", "D000622")).toBe(true);
+    expect(namesMemberTwice([{ cosponsors: [sponsor, { bioguideId: "X000001" }] }], "cosponsored", "D000622")).toBe(false);
+    expect(namesMemberTwice([], "sponsored", "D000622")).toBe(false);
   });
 
   it("refuses to keep paging past what the reported count allows", async () => {

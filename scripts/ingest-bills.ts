@@ -30,6 +30,7 @@ import {
   checkSponsor,
   cosponsorsNext,
   memberLegislationUrl,
+  namesMemberTwice,
   parseLegislation,
   readLegislationPage,
   readWholeList,
@@ -175,13 +176,29 @@ const missing: string[] = [];
 let reReadLists = 0;
 let extraReads = 0;
 
+/** Whether an item repeating in every read of a member's list is on its own record twice (see namesMemberTwice). */
+async function listsTwice(item: string, kind: LegislationKind, id: string): Promise<boolean> {
+  // The key is the item's API URL; anything else isn't sent our key.
+  if (!item.startsWith(`${API_BASE}/`)) return false;
+  const bodies: unknown[] = [];
+  let url: string | null = `${item.replace(API_BASE, base)}${kind === "cosponsored" ? "/cosponsors" : ""}?format=json&limit=250`;
+  while (url && bodies.length < 20) {
+    const res = await get(url);
+    if (!res) break;
+    bodies.push(res.body);
+    const next = kind === "cosponsored" ? cosponsorsNext(res.body) : null;
+    url = next ? next.replace(API_BASE, base) : null;
+  }
+  return namesMemberTwice(bodies, kind, id);
+}
+
 /** Read one member list in full; see readWholeList for how gaps are filled. */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<{ pages: LegislationPage[]; doubled: number } | null> {
   const list = await readWholeList(`${id} ${kind}`, async (offset, limit) => {
     const url = memberLegislationUrl(id, kind, offset, base, limit);
     const res = await get(url);
     return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
-  });
+  }, undefined, (item) => listsTwice(item, kind, id));
   if (!list) return null;
   if (list.reads > 1) reReadLists++;
   extraReads += list.reads - 1;
