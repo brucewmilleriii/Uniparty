@@ -55,7 +55,10 @@ jobs:
         if: steps.key.outputs.ready == 'true'
       - name: Check the live source for a sample of members (pull requests)
         if: steps.key.outputs.ready == 'true' && github.event_name == 'pull_request'
-        run: npm run ingest:bills -- --check --members 25
+        run: |
+          npm run ingest:bills -- --check --members 25
+          # Lists that a single page size never read in full in the 2026-10-19 run.
+          npm run ingest:bills -- --check --ids D000622,B001302,F000472
       - name: Fetch, validate and write bills
         if: steps.key.outputs.ready == 'true' && github.event_name != 'pull_request'
         run: npm run ingest:bills

@@ -20,8 +20,8 @@ export const API_BASE = "https://api.congress.gov/v3";
 export type LegislationKind = "sponsored" | "cosponsored";
 
 /** The member's list endpoint. The API key goes in a header, never in a URL that gets stored. */
-export const memberLegislationUrl = (bioguideId: string, kind: LegislationKind, offset = 0, base = API_BASE) =>
-  `${base}/member/${bioguideId}/${kind}-legislation?format=json&limit=250${offset ? `&offset=${offset}` : ""}`;
+export const memberLegislationUrl = (bioguideId: string, kind: LegislationKind, offset = 0, base = API_BASE, limit = 250) =>
+  `${base}/member/${bioguideId}/${kind}-legislation?format=json&limit=${limit}${offset ? `&offset=${offset}` : ""}`;
 export const billUrl = (congress: number, type: string, number: number, base = API_BASE) =>
   `${base}/bill/${congress}/${type.toLowerCase()}/${number}?format=json`;
 export const billCosponsorsUrl = (congress: number, type: string, number: number, offset = 0, base = API_BASE) =>
@@ -68,12 +68,20 @@ export interface ParsedLegislation {
   errors: string[];
 }
 
+/**
+ * Page size for the nth read of a list: 250, then 249, 247, 244, 240 and so on. Congress.gov
+ * reliably repeats one item at a page boundary and drops another, the same way on every
+ * read at the same page size, so each re-read moves the boundaries to bring the dropped
+ * items back.
+ */
+export const pageSize = (read: number) => 250 - (read * (read - 1)) / 2;
+
 /** Most full reads of one list before giving up on collecting every item. */
 export const MAX_READS = 12;
 
 /**
- * Read one member list, all pages. Congress.gov's order shifts between requests, so a
- * single pass by offset repeats some items and misses others; the list is read again
+ * Read one member list, all pages. Paging Congress.gov by offset repeats some items and
+ * misses others (see pageSize); the list is read again
  * until the distinct items reach the reported count, and every pass is returned for
  * parseLegislation to merge and check. A list assembled from several passes is then
  * confirmed by further passes: together they must return every item again and nothing
@@ -87,7 +95,7 @@ export const MAX_READS = 12;
  */
 export async function readWholeList<S>(
   at: string,
-  readPage: (offset: number) => Promise<{ page: LegislationPage; source: S } | null>,
+  readPage: (offset: number, limit: number) => Promise<{ page: LegislationPage; source: S } | null>,
   maxReads = MAX_READS,
 ): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean } | null> {
   const keysOf = (pages: LegislationPage[]) => new Set(pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean));
@@ -99,10 +107,11 @@ export async function readWholeList<S>(
   let reconfirmed = new Set<string>();
   while (reads < maxReads) {
     reads++;
+    const limit = pageSize(reads);
     const pages: LegislationPage[] = [];
     const read: S[] = [];
     for (let offset = 0; ; ) {
-      const res = await readPage(offset);
+      const res = await readPage(offset, limit);
       if (!res) {
         // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
         if (pages.length === 0 && reads === 1) return null;
@@ -112,7 +121,7 @@ export async function readWholeList<S>(
       pages.push(res.page);
       if (!needsNextPage(res.page)) break;
       offset += res.page.items.length;
-      if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
+      if (pages.length > Math.ceil(pages[0].count / limit) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
     }
     const changed =
       (all.length > 0 && [...all, ...pages].some((p) => p.count !== pages[0].count)) ||

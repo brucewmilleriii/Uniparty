@@ -12,6 +12,7 @@
  *   npm run ingest:bills                         # fetch from the source
  *   npm run ingest:bills -- --check              # fetch and validate only; write nothing
  *   npm run ingest:bills -- --check --members 25 # same, for the first 25 members only
+ *   npm run ingest:bills -- --check --ids B001302,F000472 # same, for these members only
  *   npm run ingest:bills -- --force              # write even if nothing changed
  *
  * Exits non-zero, leaving the existing snapshot untouched, if anything fails validation.
@@ -52,6 +53,8 @@ const arg = (name: string) => {
 const check = process.argv.includes("--check");
 const force = process.argv.includes("--force");
 const memberLimit = arg("--members") ? Number(arg("--members")) : Infinity;
+/** Comma-separated bioguide ids to check instead of the roster's first members. */
+const onlyIds = arg("--ids")?.split(",").filter(Boolean);
 /** Overridable only to point the script at a local mock in testing. */
 const base = process.env.CONGRESS_API_BASE ?? API_BASE;
 const fetchedAt = new Date().toISOString();
@@ -68,8 +71,8 @@ const HOURLY_BUDGET = 4200;
 /** Wait for the key's hourly allowance to recover when fewer calls than this are left. */
 const RESERVE = 400;
 
-if (memberLimit !== Infinity && !check) {
-  console.error("--members only works with --check; a partial snapshot would drop everyone else.");
+if ((memberLimit !== Infinity || onlyIds) && !check) {
+  console.error("--members and --ids only work with --check; a partial snapshot would drop everyone else.");
   process.exit(1);
 }
 
@@ -170,8 +173,8 @@ let extraReads = 0;
 
 /** Read one member list in full; see readWholeList for how gaps are filled. */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
-  const list = await readWholeList(`${id} ${kind}`, async (offset) => {
-    const url = memberLegislationUrl(id, kind, offset, base);
+  const list = await readWholeList(`${id} ${kind}`, async (offset, limit) => {
+    const url = memberLegislationUrl(id, kind, offset, base, limit);
     const res = await get(url);
     return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
   });
@@ -186,7 +189,7 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
 
 async function main() {
   const roster = JSON.parse(await readFile(ROSTER, "utf8")) as RosterSnapshot;
-  const ids = roster.members.map((m) => m.bioguideId).slice(0, memberLimit);
+  const ids = onlyIds ?? roster.members.map((m) => m.bioguideId).slice(0, memberLimit);
 
   let prev: BillsSnapshot | null = null;
   try {

@@ -8,6 +8,7 @@ import {
   checkSponsor,
   memberLegislationUrl,
   needsNextPage,
+  pageSize,
   parseLegislation,
   readLegislationPage,
   readWholeList,
@@ -273,6 +274,22 @@ describe("readWholeList", () => {
     const list = await readWholeList("T000001 sponsored", s.readPage);
     expect(list!.confirmed).toBe(true);
     expect(list!.reads).toBe(3);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
+  it("recovers items a fixed page size always drops at a page boundary", async () => {
+    // Like Congress.gov: each page after the first repeats the previous page's last item, so the item at
+    // every boundary is never returned at that page size. Page sizes here are scaled down from pageSize().
+    const readPage = async (offset: number, limit: number) => {
+      const size = limit - 235;
+      const slice = items.slice(offset, offset + size);
+      if (offset > 0) slice[0] = items[offset - 1];
+      return { page: { items: slice, count: items.length, next: offset + size < items.length ? "more" : null } as LegislationPage, source: offset };
+    };
+    expect([1, 2, 3, 4].map(pageSize)).toEqual([250, 249, 247, 244]);
+    const list = await readWholeList("T000001 sponsored", readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(4);
     expect(parse(list!.pages).errors).toEqual([]);
   });
 
