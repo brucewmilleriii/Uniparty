@@ -217,9 +217,8 @@ describe("readWholeList", () => {
     expect(list!.pages.every((p) => p.count === 29)).toBe(true);
     expect(parse(list!.pages).errors).toEqual([]);
 
-    // Item 30 never comes back; a different item repeats in its place on each read (three pages a read).
-    let calls = 0;
-    const stuck = server(() => [...items.slice(0, 29), item(Math.floor(calls++ / 3) + 1)]);
+    // Item 30 never comes back and item 1 repeats in its place on every read; nothing says item 1 is listed twice.
+    const stuck = server(() => [...items.slice(0, 29), item(1)]);
     const short = await readWholeList("T000001 sponsored", stuck.readPage, 4);
     expect(short!.reads).toBe(4);
     expect(short!.confirmed).toBe(false);
