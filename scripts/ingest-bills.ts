@@ -176,7 +176,7 @@ let reReadLists = 0;
 let extraReads = 0;
 
 /** Read one member list in full; see readWholeList for how gaps are filled. */
-async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
+async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<{ pages: LegislationPage[]; doubled: number } | null> {
   const list = await readWholeList(`${id} ${kind}`, async (offset, limit) => {
     const url = memberLegislationUrl(id, kind, offset, base, limit);
     const res = await get(url);
@@ -188,7 +188,8 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
   const unconfirmed = unconfirmedError(`${id} ${kind}`, list);
   if (unconfirmed) errors.push(unconfirmed);
   sources.push(...list.sources);
-  return list.pages;
+  if (list.doubled.length) console.log(`  ${id} ${kind}: Congress.gov lists ${list.doubled.join(", ")} twice`);
+  return { pages: list.pages, doubled: list.doubled.length };
 }
 
 async function main() {
@@ -225,8 +226,8 @@ async function main() {
       missing.push(id);
       return;
     }
-    const s = parseLegislation(sp, "sponsored", id, congress);
-    const c = parseLegislation(co, "cosponsored", id, congress);
+    const s = parseLegislation(sp.pages, "sponsored", id, congress, undefined, sp.doubled);
+    const c = parseLegislation(co.pages, "cosponsored", id, congress, undefined, co.doubled);
     errors.push(...s.errors, ...c.errors);
     members[id] = toMemberBills(s, c, sources, fetchedAt, bills);
     for (const link of s.links) samples.push({ kind: "sponsored", id, link });

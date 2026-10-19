@@ -215,11 +215,25 @@ describe("readWholeList", () => {
     expect(list!.pages.every((p) => p.count === 29)).toBe(true);
     expect(parse(list!.pages).errors).toEqual([]);
 
-    const stuck = server(() => [...items.slice(0, 29), item(1)]);
+    // Item 30 never comes back; a different item repeats in its place on each read (three pages a read).
+    let calls = 0;
+    const stuck = server(() => [...items.slice(0, 29), item(Math.floor(calls++ / 3) + 1)]);
     const short = await readWholeList("T000001 sponsored", stuck.readPage, 4);
     expect(short!.reads).toBe(4);
     expect(short!.confirmed).toBe(false);
+    expect(short!.doubled).toEqual([]);
     expect(parse(short!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
+  });
+
+  it("accepts an item Congress.gov lists twice on every read, and counts it once", async () => {
+    // As with D000622's sponsored list, which has 118/s/38 twice: the count includes both.
+    const list = await readWholeList("T000001 sponsored", server(() => [...items.slice(0, 29), item(7)]).readPage);
+    expect(list!.confirmed).toBe(true);
+    // Three reads establish the double listing and a fourth confirms the list.
+    expect(list!.reads).toBe(4);
+    expect(list!.doubled).toEqual([item(7).url]);
+    expect(parse(list!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
+    expect(parseLegislation(list!.pages, "sponsored", "T000001", 119, today, list!.doubled.length).errors).toEqual([]);
   });
 
   it("starts over when a confirming read turns up an item the others never returned", async () => {
@@ -303,8 +317,8 @@ describe("readWholeList", () => {
     const short = { pages: [{ items: [item(1)], count: 3, next: null }], reads: 12, confirmed: false };
     expect(unconfirmedError("T000001 sponsored", short)).toMatch(/still short after 12 reads \(1 of 3 items\)/);
     expect(unconfirmedError("T000001 sponsored", { ...short, confirmed: true })).toBeNull();
-    const twice = { ...short, pages: [{ items: [item(1), item(1), { congress: 119 }], count: 3, next: null }] };
-    expect(unconfirmedError("T000001 sponsored", twice)).toMatch(/\(1 of 3 items\); 1 without an id; listed twice within a page: \S+/);
+    const noId = { ...short, pages: [{ items: [item(1), { congress: 119 }], count: 3, next: null }], doubled: [item(2).url] };
+    expect(unconfirmedError("T000001 sponsored", noId)).toMatch(/\(1 of 2 items\); 1 without an id/);
   });
 
   it("refuses to keep paging past what the reported count allows", async () => {

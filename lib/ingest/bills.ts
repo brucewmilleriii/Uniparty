@@ -89,7 +89,8 @@ export const MAX_READS = 12;
  * read (say, one cosponsorship withdrawn and another added, which leaves the count
  * alone); a new item drops the earlier passes and starts over from that one. A pass
  * whose count differs from the earlier ones, or that takes the merged items past the
- * count, also replaces them. If the reads run out first, `confirmed` is false and the caller
+ * count, also replaces them. An item Congress.gov lists twice is returned in `doubled`
+ * and counted once (see below). If the reads run out first, `confirmed` is false and the caller
  * must not publish the list. `readPage` returns null on a 404, which on the very
  * first page means the member has no list (null is returned).
  */
@@ -97,11 +98,26 @@ export async function readWholeList<S>(
   at: string,
   readPage: (offset: number, limit: number) => Promise<{ page: LegislationPage; source: S } | null>,
   maxReads = MAX_READS,
-): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean } | null> {
+): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean; doubled: string[] } | null> {
   const keysOf = (pages: LegislationPage[]) => new Set(pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean));
+  const repeatsIn = (pages: LegislationPage[]) =>
+    new Set(pages.flatMap((p) => p.items.map(itemKey)).filter((k, i, ks) => k && ks.indexOf(k) !== i));
   let all: LegislationPage[] = [];
   let kept: S[] = [];
   let reads = 0;
+  // Congress.gov lists some items twice and counts both (D000622's sponsored list has
+  // 118/s/38 twice). A page-boundary slip repeats a different item at each page size, so an
+  // item repeated in every pass, at three or more sizes, is a double listing; the list then
+  // has that many fewer distinct items than its count.
+  let repeated = new Set<string>();
+  let passes = 0;
+  const doubled = () => (passes >= 3 ? [...repeated] : []);
+  const expected = () => all[0].count - doubled().length;
+  const track = (pages: LegislationPage[], fresh: boolean) => {
+    const r = repeatsIn(pages);
+    repeated = fresh ? r : new Set([...repeated].filter((k) => r.has(k)));
+    passes = fresh ? 1 : passes + 1;
+  };
   // The distinct items of a complete multi-pass list, and those the confirming passes have returned so far.
   let toConfirm: Set<string> | null = null;
   let reconfirmed = new Set<string>();
@@ -131,27 +147,29 @@ export async function readWholeList<S>(
       kept = [];
       toConfirm = null;
     }
+    track(pages, all.length === 0);
     all.push(...pages);
     kept.push(...read);
     if (toConfirm) {
       for (const k of keysOf(pages)) reconfirmed.add(k);
-      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true };
+      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true, doubled: doubled() };
       continue;
     }
     const consistent = all.every((p) => p.count === all[0].count);
     // More distinct items than the count means one was withdrawn and another added between passes; keep only this pass.
-    if (consistent && keysOf(all).size > all[0].count) {
+    if (consistent && keysOf(all).size > expected()) {
       all = [...pages];
       kept = [...read];
+      track(pages, true);
     }
-    if (consistent && keysOf(all).size === all[0].count) {
-      if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true };
+    if (consistent && keysOf(all).size === expected()) {
+      if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true, doubled: [] };
       toConfirm = keysOf(all);
       reconfirmed = new Set();
     }
   }
   // A complete, confirmed list returns from inside the loop; running out of reads means it never was.
-  return { pages: all, sources: kept, reads, confirmed: false };
+  return { pages: all, sources: kept, reads, confirmed: false, doubled: doubled() };
 }
 
 /**
@@ -159,17 +177,14 @@ export async function readWholeList<S>(
  * complete-but-unconfirmed list passes parseLegislation's count checks, so this error is
  * what keeps it from being published; callers must add it to their errors.
  */
-export function unconfirmedError(at: string, list: { pages: LegislationPage[]; reads: number; confirmed: boolean }): string | null {
+export function unconfirmedError(at: string, list: { pages: LegislationPage[]; reads: number; confirmed: boolean; doubled?: string[] }): string | null {
   if (list.confirmed) return null;
   const distinct = new Set(list.pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
-  const count = list.pages[0]?.count ?? 0;
+  const count = (list.pages[0]?.count ?? 0) - (list.doubled?.length ?? 0);
   if (distinct >= count) return `${at}: complete but not confirmed after ${list.reads} reads`;
-  // A repeat inside one page can't be a page-boundary slip, and an item with no id can't be
-  // counted; name either so a list that stays short says why.
+  // An item with no id can't be counted; say so if that's why a list stays short.
   const noId = list.pages.reduce((n, p) => n + p.items.filter((i) => !itemKey(i)).length, 0);
-  const inPage = new Set(list.pages.flatMap((p) => p.items.map(itemKey).filter((k, i, ks) => k && ks.indexOf(k) !== i)));
-  const why = [noId ? `${noId} without an id` : "", inPage.size ? `listed twice within a page: ${[...inPage].join(", ")}` : ""].filter(Boolean);
-  return `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)${why.length ? `; ${why.join("; ")}` : ""}`;
+  return `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)${noId ? `; ${noId} without an id` : ""}`;
 }
 
 /**
@@ -187,13 +202,14 @@ export function itemKey(item: Record<string, unknown>): string {
  * Read a member's pages for the current Congress and check them: every item must be
  * a well-formed bill in a Congress no later than the current one, and the whole list
  * must be there: the distinct items must number exactly the count Congress.gov reports,
- * so a truncated or shifted read can't pass as complete. Congress.gov's order isn't
+ * less the `doubled` items readWholeList found it listing twice, so a truncated or
+ * shifted read can't pass as complete. Congress.gov's order isn't
  * stable between requests, so offset paging repeats some items and skips others; the
  * pages may come from several reads of the list, and repeats are merged. Items from
  * earlier Congresses are skipped wherever they appear, and the links come back sorted
  * newest first by their own date, since the source order is neither.
  */
-export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date()): ParsedLegislation {
+export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date(), doubled = 0): ParsedLegislation {
   const at = `${bioguideId} ${kind}`;
   const errors: string[] = [];
   const links: ParsedLink[] = [];
@@ -270,11 +286,12 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   links.sort((a, b) => b.date.localeCompare(a.date) || b.bill.number - a.bill.number || a.bill.type.localeCompare(b.bill.type));
 
   const last = pages[pages.length - 1];
+  const expected = (last?.count ?? 0) - doubled;
   if (!pages.length) errors.push(`${at}: no pages fetched`);
   else if (last.next !== null) errors.push(`${at}: stopped before the end of the list`);
   else if (pages.some((p) => p.count !== last.count)) errors.push(`${at}: list changed while it was being read (count went from ${pages[0].count} to ${last.count})`);
-  else if (listed < last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; some were never returned`);
-  else if (listed > last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; the list changed while it was being read`);
+  else if (listed < expected) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${expected}; some were never returned`);
+  else if (listed > expected) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${expected}; the list changed while it was being read`);
   return { links, amendments, errors };
 }
 
