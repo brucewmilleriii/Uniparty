@@ -192,7 +192,8 @@ async function listsTwice(item: string, kind: LegislationKind, id: string, sourc
     bodies.push(res.body);
     read.push({ url: publicUrl(url), sha256: sha(res.text) });
     const next = kind === "cosponsored" ? cosponsorsNext(res.body) : null;
-    url = next ? next.replace(API_BASE, base) : null;
+    // Only Congress.gov is sent our key.
+    url = next?.startsWith(`${API_BASE}/`) ? next.replace(API_BASE, base) : null;
   }
   const twice = namesMemberTwice(bodies, kind, id);
   if (twice) sources.push(...read);
@@ -281,7 +282,8 @@ async function main() {
       if (!res) break;
       pages.push(res.body);
       const next = cosponsorsNext(res.body);
-      url = next ? next.replace(API_BASE, base) : null;
+      // Only Congress.gov is sent our key.
+      url = next?.startsWith(`${API_BASE}/`) ? next.replace(API_BASE, base) : null;
     }
     errors.push(...checkCosponsor(pages, link, id));
   });
