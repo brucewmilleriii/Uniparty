@@ -57,7 +57,8 @@ jobs:
         if: steps.key.outputs.ready == 'true' && github.event_name == 'pull_request'
         run: |
           npm run ingest:bills -- --check --members 25
-          # Lists that failed full runs: the first three on 2026-10-19, L000570 on 2026-10-20.
+          # Lists that failed full runs: the first three on 2026-10-19, L000570 on 2026-10-20 (Congress.gov
+          # returns 3,181 of the 3,336 items it reports, so the check should leave L000570 out with the reason).
           npm run ingest:bills -- --check --ids D000622,B001302,F000472,L000570
       - name: Fetch, validate and write bills
         if: steps.key.outputs.ready == 'true' && github.event_name != 'pull_request'

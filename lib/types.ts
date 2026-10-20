@@ -165,6 +165,11 @@ export interface BillsSnapshot {
   bills: Record<string, Bill>;
   /** Keyed by bioguide id. */
   members: Record<string, MemberBills>;
+  /**
+   * Members left out because one of their Congress.gov lists never added up (it reports
+   * more items than it returns, however it is read), with the reason for each.
+   */
+  unverified?: Record<string, string>;
 }
 
 /**

@@ -65,6 +65,14 @@ export default function Bills({ bills, lastName, allUrl }: { bills: MemberBillsV
               see {lastName}’s bills on Congress.gov ↗
             </a>
           </p>
+        ) : bills.unverified ? (
+          <p className="panel-note">
+            At the last pull, Congress.gov reported more of {lastName}’s bills than it returned, however the list was read, so
+            we aren’t showing an incomplete list or count here.{" "}
+            <a href={allUrl} target="_blank" rel="noopener">
+              See {lastName}’s bills on Congress.gov ↗
+            </a>
+          </p>
         ) : bills.sponsoredCount === null ? (
           <p className="panel-note">
             Congress.gov had no record for {lastName} at the last pull, which usually means they were sworn in very recently.{" "}

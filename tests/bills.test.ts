@@ -414,6 +414,21 @@ describe("validateBillsSnapshot", () => {
     expect(validateBillsSnapshot(build(), ["K000367", "A1", "A2", "A3", "A4"], null).join()).toMatch(/4 members have no bill record/);
   });
 
+  it("counts a member left out for a list that never added up apart from missing ones, up to a limit", () => {
+    const ids = ["K000367", "A1", "A2", "A3", "L1"];
+    const snap: BillsSnapshot = { ...build(), unverified: { L1: "L1 cosponsored: still short after 12 reads (3181 of 3336 items)" } };
+    expect(validateBillsSnapshot(snap, ids, null)).toEqual([]);
+    snap.unverified = Object.fromEntries(["L1", "L2", "L3", "L4", "L5", "L6"].map((id) => [id, `${id}: still short`]));
+    expect(validateBillsSnapshot(snap, ids, null).join()).toMatch(/6 members' lists never added up/);
+  });
+
+  it("rejects a member both published and left out, or left out with no reason", () => {
+    const snap = { ...build(), unverified: { K000367: "short", L1: " " } };
+    const problems = validateBillsSnapshot(snap, ["K000367", "L1"], null).join();
+    expect(problems).toMatch(/K000367 is both published and left out/);
+    expect(problems).toMatch(/L1 is left out with no reason/);
+  });
+
   it("rejects a sponsored count that went down within a Congress", () => {
     const prev = build();
     prev.members.K000367.sponsoredCount = 7;
