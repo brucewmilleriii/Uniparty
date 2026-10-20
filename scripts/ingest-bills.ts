@@ -30,6 +30,7 @@ import {
   checkSponsor,
   cosponsorsNext,
   memberLegislationUrl,
+  itemKey,
   namesMemberTwice,
   recordUrl,
   parseLegislation,
@@ -202,16 +203,38 @@ async function listsTwice(item: string, kind: LegislationKind, id: string, sourc
 
 /** Read one member list in full; see readWholeList for how gaps are filled. */
 async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<{ pages: LegislationPage[]; doubled: number } | null> {
+  // Per-read tallies, logged if the list never confirms, to show how it falls short.
+  const passes: { limit: number; count: number; rows: number; keys: Set<string> }[] = [];
+  const checks = new Map<string, boolean>();
   const list = await readWholeList(`${id} ${kind}`, async (offset, limit) => {
     const url = memberLegislationUrl(id, kind, offset, base, limit);
     const res = await get(url);
-    return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
-  }, undefined, (item) => listsTwice(item, kind, id, sources));
+    if (!res) return null;
+    const page = readLegislationPage(res.body, kind);
+    if (offset === 0) passes.push({ limit, count: page.count, rows: 0, keys: new Set() });
+    const pass = passes[passes.length - 1];
+    pass.rows += page.items.length;
+    for (const item of page.items) pass.keys.add(itemKey(item));
+    return { page, source: { url: publicUrl(url), sha256: sha(res.text) } };
+  }, undefined, async (item) => {
+    const twice = await listsTwice(item, kind, id, sources);
+    checks.set(item, twice);
+    return twice;
+  });
   if (!list) return null;
   if (list.reads > 1) reReadLists++;
   extraReads += list.reads - 1;
   const unconfirmed = unconfirmedError(`${id} ${kind}`, list);
-  if (unconfirmed) errors.push(unconfirmed);
+  if (unconfirmed) {
+    errors.push(unconfirmed);
+    const all = new Set(passes.flatMap((p) => [...p.keys]));
+    console.log(`  ${id} ${kind} never confirmed; ${all.size} distinct items over all reads.`);
+    for (const p of passes) console.log(`    limit ${p.limit}: count ${p.count}, ${p.rows} rows, ${p.keys.size} distinct`);
+    const inEvery = [...all].filter((k) => passes.every((p) => p.keys.has(k)));
+    const notInAny = passes.map((p) => all.size - p.keys.size);
+    console.log(`    in every read: ${inEvery.length}; missing per read: ${notInAny.join(", ")}`);
+    if (checks.size) console.log(`    record checks: ${[...checks].map(([k, v]) => `${k} ${v ? "twice" : "once"}`).slice(0, 10).join("; ")}${checks.size > 10 ? ` (+${checks.size - 10} more)` : ""}`);
+  }
   sources.push(...list.sources);
   if (list.doubled.length) console.log(`  ${id} ${kind}: Congress.gov lists ${list.doubled.join(", ")} twice`);
   return { pages: list.pages, doubled: list.doubled.length };
