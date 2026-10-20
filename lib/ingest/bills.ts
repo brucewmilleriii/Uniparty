@@ -20,8 +20,8 @@ export const API_BASE = "https://api.congress.gov/v3";
 export type LegislationKind = "sponsored" | "cosponsored";
 
 /** The member's list endpoint. The API key goes in a header, never in a URL that gets stored. */
-export const memberLegislationUrl = (bioguideId: string, kind: LegislationKind, offset = 0, base = API_BASE) =>
-  `${base}/member/${bioguideId}/${kind}-legislation?format=json&limit=250${offset ? `&offset=${offset}` : ""}`;
+export const memberLegislationUrl = (bioguideId: string, kind: LegislationKind, offset = 0, base = API_BASE, limit = 250) =>
+  `${base}/member/${bioguideId}/${kind}-legislation?format=json&limit=${limit}${offset ? `&offset=${offset}` : ""}`;
 export const billUrl = (congress: number, type: string, number: number, base = API_BASE) =>
   `${base}/bill/${congress}/${type.toLowerCase()}/${number}?format=json`;
 export const billCosponsorsUrl = (congress: number, type: string, number: number, offset = 0, base = API_BASE) =>
@@ -68,12 +68,20 @@ export interface ParsedLegislation {
   errors: string[];
 }
 
+/**
+ * Page size for the nth read of a list: 250, then 249, 247, 244, 240 and so on. Congress.gov
+ * reliably repeats one item at a page boundary and drops another, the same way on every
+ * read at the same page size, so each re-read moves the boundaries to bring the dropped
+ * items back.
+ */
+export const pageSize = (read: number) => 250 - (read * (read - 1)) / 2;
+
 /** Most full reads of one list before giving up on collecting every item. */
 export const MAX_READS = 12;
 
 /**
- * Read one member list, all pages. Congress.gov's order shifts between requests, so a
- * single pass by offset repeats some items and misses others; the list is read again
+ * Read one member list, all pages. Paging Congress.gov by offset repeats some items and
+ * misses others (see pageSize); the list is read again
  * until the distinct items reach the reported count, and every pass is returned for
  * parseLegislation to merge and check. A list assembled from several passes is then
  * confirmed by further passes: together they must return every item again and nothing
@@ -81,28 +89,50 @@ export const MAX_READS = 12;
  * read (say, one cosponsorship withdrawn and another added, which leaves the count
  * alone); a new item drops the earlier passes and starts over from that one. A pass
  * whose count differs from the earlier ones, or that takes the merged items past the
- * count, also replaces them. If the reads run out first, `confirmed` is false and the caller
+ * count, also replaces them. An item Congress.gov lists twice, as its own record confirms,
+ * is returned in `doubled` and counted once (see below). If the reads run out first, `confirmed` is false and the caller
  * must not publish the list. `readPage` returns null on a 404, which on the very
  * first page means the member has no list (null is returned).
  */
 export async function readWholeList<S>(
   at: string,
-  readPage: (offset: number) => Promise<{ page: LegislationPage; source: S } | null>,
+  readPage: (offset: number, limit: number) => Promise<{ page: LegislationPage; source: S } | null>,
   maxReads = MAX_READS,
-): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean } | null> {
+  listsTwice: (key: string) => Promise<boolean> = async () => false,
+): Promise<{ pages: LegislationPage[]; sources: S[]; reads: number; confirmed: boolean; doubled: string[] } | null> {
   const keysOf = (pages: LegislationPage[]) => new Set(pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean));
+  const repeatsIn = (pages: LegislationPage[]) =>
+    new Set(pages.flatMap((p) => p.items.map(itemKey)).filter((k, i, ks) => k && ks.indexOf(k) !== i));
   let all: LegislationPage[] = [];
   let kept: S[] = [];
   let reads = 0;
+  // Congress.gov lists some items twice and counts both: S. 38 (118th) names D000622 as its
+  // sponsor twice, so her sponsored list has it twice. An item that repeats in every pass, at
+  // three or more page sizes, is checked with `listsTwice` against its own record; only one
+  // the record confirms is counted once. Anything else repeating stays a gap to fill.
+  let repeated = new Set<string>();
+  let passes = 0;
+  const checked = new Map<string, boolean>();
+  let doubled: string[] = [];
+  const expected = () => all[0].count - doubled.length;
+  const track = async (pages: LegislationPage[], fresh: boolean) => {
+    const r = repeatsIn(pages);
+    repeated = fresh ? r : new Set([...repeated].filter((k) => r.has(k)));
+    passes = fresh ? 1 : passes + 1;
+    if (passes < 3) return void (doubled = []);
+    for (const k of repeated) if (!checked.has(k)) checked.set(k, await listsTwice(k));
+    doubled = [...repeated].filter((k) => checked.get(k));
+  };
   // The distinct items of a complete multi-pass list, and those the confirming passes have returned so far.
   let toConfirm: Set<string> | null = null;
   let reconfirmed = new Set<string>();
   while (reads < maxReads) {
     reads++;
+    const limit = pageSize(reads);
     const pages: LegislationPage[] = [];
     const read: S[] = [];
     for (let offset = 0; ; ) {
-      const res = await readPage(offset);
+      const res = await readPage(offset, limit);
       if (!res) {
         // A 404 on the first page means the member isn't on Congress.gov; later, it means the read broke.
         if (pages.length === 0 && reads === 1) return null;
@@ -112,7 +142,7 @@ export async function readWholeList<S>(
       pages.push(res.page);
       if (!needsNextPage(res.page)) break;
       offset += res.page.items.length;
-      if (pages.length > Math.ceil(pages[0].count / 250) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
+      if (pages.length > Math.ceil(pages[0].count / limit) + 2) throw new Error(`${at}: more pages than the reported count allows; refusing to keep paging`);
     }
     const changed =
       (all.length > 0 && [...all, ...pages].some((p) => p.count !== pages[0].count)) ||
@@ -122,27 +152,29 @@ export async function readWholeList<S>(
       kept = [];
       toConfirm = null;
     }
+    await track(pages, all.length === 0);
     all.push(...pages);
     kept.push(...read);
     if (toConfirm) {
       for (const k of keysOf(pages)) reconfirmed.add(k);
-      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true };
+      if (reconfirmed.size === toConfirm.size) return { pages: all, sources: kept, reads, confirmed: true, doubled };
       continue;
     }
     const consistent = all.every((p) => p.count === all[0].count);
     // More distinct items than the count means one was withdrawn and another added between passes; keep only this pass.
-    if (consistent && keysOf(all).size > all[0].count) {
+    if (consistent && keysOf(all).size > expected()) {
       all = [...pages];
       kept = [...read];
+      await track(pages, true);
     }
-    if (consistent && keysOf(all).size === all[0].count) {
-      if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true };
+    if (consistent && keysOf(all).size === expected()) {
+      if (reads === 1) return { pages: all, sources: kept, reads, confirmed: true, doubled: [] };
       toConfirm = keysOf(all);
       reconfirmed = new Set();
     }
   }
   // A complete, confirmed list returns from inside the loop; running out of reads means it never was.
-  return { pages: all, sources: kept, reads, confirmed: false };
+  return { pages: all, sources: kept, reads, confirmed: false, doubled };
 }
 
 /**
@@ -150,13 +182,14 @@ export async function readWholeList<S>(
  * complete-but-unconfirmed list passes parseLegislation's count checks, so this error is
  * what keeps it from being published; callers must add it to their errors.
  */
-export function unconfirmedError(at: string, list: { pages: LegislationPage[]; reads: number; confirmed: boolean }): string | null {
+export function unconfirmedError(at: string, list: { pages: LegislationPage[]; reads: number; confirmed: boolean; doubled?: string[] }): string | null {
   if (list.confirmed) return null;
   const distinct = new Set(list.pages.flatMap((p) => p.items.map(itemKey)).filter(Boolean)).size;
-  const count = list.pages[0]?.count ?? 0;
-  return distinct < count
-    ? `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)`
-    : `${at}: complete but not confirmed after ${list.reads} reads`;
+  const count = (list.pages[0]?.count ?? 0) - (list.doubled?.length ?? 0);
+  if (distinct >= count) return `${at}: complete but not confirmed after ${list.reads} reads`;
+  // An item with no id can't be counted; say so if that's why a list stays short.
+  const noId = list.pages.reduce((n, p) => n + p.items.filter((i) => !itemKey(i)).length, 0);
+  return `${at}: still short after ${list.reads} reads (${distinct} of ${count} items)${noId ? `; ${noId} without an id` : ""}`;
 }
 
 /**
@@ -174,13 +207,14 @@ export function itemKey(item: Record<string, unknown>): string {
  * Read a member's pages for the current Congress and check them: every item must be
  * a well-formed bill in a Congress no later than the current one, and the whole list
  * must be there: the distinct items must number exactly the count Congress.gov reports,
- * so a truncated or shifted read can't pass as complete. Congress.gov's order isn't
+ * less the `doubled` items readWholeList found it listing twice, so a truncated or
+ * shifted read can't pass as complete. Congress.gov's order isn't
  * stable between requests, so offset paging repeats some items and skips others; the
  * pages may come from several reads of the list, and repeats are merged. Items from
  * earlier Congresses are skipped wherever they appear, and the links come back sorted
  * newest first by their own date, since the source order is neither.
  */
-export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date()): ParsedLegislation {
+export function parseLegislation(pages: LegislationPage[], kind: LegislationKind, bioguideId: string, congress: number, today = new Date(), doubled = 0): ParsedLegislation {
   const at = `${bioguideId} ${kind}`;
   const errors: string[] = [];
   const links: ParsedLink[] = [];
@@ -257,11 +291,12 @@ export function parseLegislation(pages: LegislationPage[], kind: LegislationKind
   links.sort((a, b) => b.date.localeCompare(a.date) || b.bill.number - a.bill.number || a.bill.type.localeCompare(b.bill.type));
 
   const last = pages[pages.length - 1];
+  const expected = (last?.count ?? 0) - doubled;
   if (!pages.length) errors.push(`${at}: no pages fetched`);
   else if (last.next !== null) errors.push(`${at}: stopped before the end of the list`);
   else if (pages.some((p) => p.count !== last.count)) errors.push(`${at}: list changed while it was being read (count went from ${pages[0].count} to ${last.count})`);
-  else if (listed < last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; some were never returned`);
-  else if (listed > last.count) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${last.count}; the list changed while it was being read`);
+  else if (listed < expected) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${expected}; some were never returned`);
+  else if (listed > expected) errors.push(`${at}: read ${listed} distinct items but Congress.gov reports ${expected}; the list changed while it was being read`);
   return { links, amendments, errors };
 }
 
@@ -291,6 +326,34 @@ export function checkCosponsor(pages: unknown[], link: Pick<ParsedLink, "date"> 
   if (!row) return [`${at}: member is not on the bill's cosponsor list`];
   if (str(row.sponsorshipDate) !== link.date) return [`${at}: bill says signed on ${str(row.sponsorshipDate)}, member list says ${link.date}`];
   return [];
+}
+
+/**
+ * Whether an item's own record names the member twice, which is why Congress.gov lists it
+ * twice: `bodies` is the bill or amendment record for a sponsored item, or the pages of
+ * its cosponsor list for a cosponsored one.
+ */
+export function namesMemberTwice(bodies: unknown[], kind: LegislationKind, bioguideId: string): boolean {
+  const rows = bodies.flatMap((b) => {
+    if (!isObj(b)) return [];
+    const record = isObj(b.bill) ? b.bill : isObj(b.amendment) ? b.amendment : null;
+    const list = kind === "sponsored" ? record?.sponsors : b.cosponsors;
+    return Array.isArray(list) ? list.filter(isObj) : [];
+  });
+  const mine = rows.filter((r) => str(r.bioguideId) === bioguideId);
+  if (kind === "sponsored") return mine.length >= 2;
+  // The cosponsor list is paged by offset too, so an identical row may be a page-boundary
+  // repeat; a real second cosponsorship (withdrawn and signed again) differs in its dates.
+  return new Set(mine.map((r) => `${str(r.sponsorshipDate)}|${str(r.sponsorshipWithdrawnDate)}`)).size >= 2;
+}
+
+/**
+ * The first URL of the record namesMemberTwice reads for a list item, or null for a key
+ * that isn't a Congress.gov API URL (so our key is never sent elsewhere).
+ */
+export function recordUrl(item: string, kind: LegislationKind, base = API_BASE): string | null {
+  if (!item.startsWith(`${API_BASE}/`)) return null;
+  return `${item.replace(API_BASE, base)}${kind === "cosponsored" ? "/cosponsors" : ""}?format=json&limit=250`;
 }
 
 /** Next page of a bill's cosponsor list, if any. */

@@ -12,6 +12,7 @@
  *   npm run ingest:bills                         # fetch from the source
  *   npm run ingest:bills -- --check              # fetch and validate only; write nothing
  *   npm run ingest:bills -- --check --members 25 # same, for the first 25 members only
+ *   npm run ingest:bills -- --check --ids B001302,F000472 # same, for these members only
  *   npm run ingest:bills -- --force              # write even if nothing changed
  *
  * Exits non-zero, leaving the existing snapshot untouched, if anything fails validation.
@@ -29,6 +30,8 @@ import {
   checkSponsor,
   cosponsorsNext,
   memberLegislationUrl,
+  namesMemberTwice,
+  recordUrl,
   parseLegislation,
   readLegislationPage,
   readWholeList,
@@ -52,6 +55,8 @@ const arg = (name: string) => {
 const check = process.argv.includes("--check");
 const force = process.argv.includes("--force");
 const memberLimit = arg("--members") ? Number(arg("--members")) : Infinity;
+/** Comma-separated bioguide ids to check instead of the roster's first members. */
+const onlyIds = arg("--ids")?.split(",").filter(Boolean);
 /** Overridable only to point the script at a local mock in testing. */
 const base = process.env.CONGRESS_API_BASE ?? API_BASE;
 const fetchedAt = new Date().toISOString();
@@ -68,8 +73,12 @@ const HOURLY_BUDGET = 4200;
 /** Wait for the key's hourly allowance to recover when fewer calls than this are left. */
 const RESERVE = 400;
 
-if (memberLimit !== Infinity && !check) {
-  console.error("--members only works with --check; a partial snapshot would drop everyone else.");
+if (process.argv.includes("--ids") && !onlyIds?.length) {
+  console.error("--ids needs at least one bioguide id.");
+  process.exit(1);
+}
+if ((memberLimit !== Infinity || onlyIds) && !check) {
+  console.error("--members and --ids only work with --check; a partial snapshot would drop everyone else.");
   process.exit(1);
 }
 
@@ -168,25 +177,53 @@ const missing: string[] = [];
 let reReadLists = 0;
 let extraReads = 0;
 
+/**
+ * Whether an item repeating in every read of a member's list is on its own record twice
+ * (see namesMemberTwice). If so, the record's pages are kept in `sources`, since they
+ * are why the member's total is one less than Congress.gov's count.
+ */
+async function listsTwice(item: string, kind: LegislationKind, id: string, sources: MemberBills["sources"]): Promise<boolean> {
+  const bodies: unknown[] = [];
+  const read: MemberBills["sources"] = [];
+  let url = recordUrl(item, kind, base);
+  while (url && bodies.length < 20) {
+    const res = await get(url);
+    if (!res) break;
+    bodies.push(res.body);
+    read.push({ url: publicUrl(url), sha256: sha(res.text) });
+    const next = kind === "cosponsored" ? cosponsorsNext(res.body) : null;
+    // Only Congress.gov is sent our key.
+    url = next?.startsWith(`${API_BASE}/`) ? next.replace(API_BASE, base) : null;
+  }
+  const twice = namesMemberTwice(bodies, kind, id);
+  if (twice) sources.push(...read);
+  return twice;
+}
+
 /** Read one member list in full; see readWholeList for how gaps are filled. */
-async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<LegislationPage[] | null> {
-  const list = await readWholeList(`${id} ${kind}`, async (offset) => {
-    const url = memberLegislationUrl(id, kind, offset, base);
+async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<{ pages: LegislationPage[]; doubled: number } | null> {
+  const list = await readWholeList(`${id} ${kind}`, async (offset, limit) => {
+    const url = memberLegislationUrl(id, kind, offset, base, limit);
     const res = await get(url);
     return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
-  });
+  }, undefined, (item) => listsTwice(item, kind, id, sources));
   if (!list) return null;
   if (list.reads > 1) reReadLists++;
   extraReads += list.reads - 1;
   const unconfirmed = unconfirmedError(`${id} ${kind}`, list);
   if (unconfirmed) errors.push(unconfirmed);
   sources.push(...list.sources);
-  return list.pages;
+  if (list.doubled.length) console.log(`  ${id} ${kind}: Congress.gov lists ${list.doubled.join(", ")} twice`);
+  return { pages: list.pages, doubled: list.doubled.length };
 }
 
 async function main() {
   const roster = JSON.parse(await readFile(ROSTER, "utf8")) as RosterSnapshot;
-  const ids = roster.members.map((m) => m.bioguideId).slice(0, memberLimit);
+  const rosterIds = roster.members.map((m) => m.bioguideId);
+  const ids = onlyIds ?? rosterIds.slice(0, memberLimit);
+  // Named ids are the point of the run, so each one must be read, not tolerated as missing.
+  const notInRoster = onlyIds?.filter((id) => !rosterIds.includes(id)) ?? [];
+  if (notInRoster.length) errors.push(`--ids not in the roster: ${notInRoster.join(", ")}`);
 
   let prev: BillsSnapshot | null = null;
   try {
@@ -214,8 +251,8 @@ async function main() {
       missing.push(id);
       return;
     }
-    const s = parseLegislation(sp, "sponsored", id, congress);
-    const c = parseLegislation(co, "cosponsored", id, congress);
+    const s = parseLegislation(sp.pages, "sponsored", id, congress, undefined, sp.doubled);
+    const c = parseLegislation(co.pages, "cosponsored", id, congress, undefined, co.doubled);
     errors.push(...s.errors, ...c.errors);
     members[id] = toMemberBills(s, c, sources, fetchedAt, bills);
     for (const link of s.links) samples.push({ kind: "sponsored", id, link });
@@ -223,6 +260,7 @@ async function main() {
     if (++done % 50 === 0) console.log(`  ${done}/${ids.length} members read; ${calls} calls, ${reReadLists} lists read again (${extraReads} extra reads)`);
   });
   console.log(`Read ${done} members for the ${congress}th Congress; ${missing.length} not on Congress.gov${missing.length ? ` (${missing.join(", ")})` : ""}.`);
+  if (onlyIds && missing.length) errors.push(`--ids not found on Congress.gov: ${missing.join(", ")}`);
 
   // Re-read a random sample of bills from their own records.
   const pick = (kind: LegislationKind) =>
@@ -244,7 +282,8 @@ async function main() {
       if (!res) break;
       pages.push(res.body);
       const next = cosponsorsNext(res.body);
-      url = next ? next.replace(API_BASE, base) : null;
+      // Only Congress.gov is sent our key.
+      url = next?.startsWith(`${API_BASE}/`) ? next.replace(API_BASE, base) : null;
     }
     errors.push(...checkCosponsor(pages, link, id));
   });

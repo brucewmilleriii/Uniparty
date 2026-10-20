@@ -8,10 +8,14 @@ import {
   checkSponsor,
   memberLegislationUrl,
   needsNextPage,
+  pageSize,
   parseLegislation,
   readLegislationPage,
   readWholeList,
   toMemberBills,
+  MAX_READS,
+  namesMemberTwice,
+  recordUrl,
   unconfirmedError,
   validateBillsSnapshot,
   type LegislationPage,
@@ -214,11 +218,32 @@ describe("readWholeList", () => {
     expect(list!.pages.every((p) => p.count === 29)).toBe(true);
     expect(parse(list!.pages).errors).toEqual([]);
 
+    // Item 30 never comes back and item 1 repeats in its place on every read; nothing says item 1 is listed twice.
     const stuck = server(() => [...items.slice(0, 29), item(1)]);
     const short = await readWholeList("T000001 sponsored", stuck.readPage, 4);
     expect(short!.reads).toBe(4);
     expect(short!.confirmed).toBe(false);
+    expect(short!.doubled).toEqual([]);
     expect(parse(short!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
+  });
+
+  it("counts an item once when it repeats on every read and its own record names the member twice", async () => {
+    // As with D000622's sponsored list: S. 38 names her as sponsor twice, and the count includes both.
+    const doubledList = () => [...items.slice(0, 29), item(7)];
+    // Without the record's say-so, the same reads are a gap that never fills (item 30 could be missing).
+    const unchecked = await readWholeList("T000001 sponsored", server(doubledList).readPage);
+    expect(unchecked!.confirmed).toBe(false);
+    expect(unchecked!.doubled).toEqual([]);
+    const asked: string[] = [];
+    const listsTwice = async (key: string) => (asked.push(key), key === item(7).url);
+    const list = await readWholeList("T000001 sponsored", server(doubledList).readPage, MAX_READS, listsTwice);
+    expect(asked).toEqual([item(7).url]);
+    expect(list!.confirmed).toBe(true);
+    // Three reads establish the double listing and a fourth confirms the list.
+    expect(list!.reads).toBe(4);
+    expect(list!.doubled).toEqual([item(7).url]);
+    expect(parse(list!.pages).errors.join()).toMatch(/read 29 distinct items but Congress.gov reports 30/);
+    expect(parseLegislation(list!.pages, "sponsored", "T000001", 119, today, list!.doubled.length).errors).toEqual([]);
   });
 
   it("starts over when a confirming read turns up an item the others never returned", async () => {
@@ -276,6 +301,22 @@ describe("readWholeList", () => {
     expect(parse(list!.pages).errors).toEqual([]);
   });
 
+  it("recovers items a fixed page size always drops at a page boundary", async () => {
+    // Like Congress.gov: each page after the first repeats the previous page's last item, so the item at
+    // every boundary is never returned at that page size. Page sizes here are scaled down from pageSize().
+    const readPage = async (offset: number, limit: number) => {
+      const size = limit - 235;
+      const slice = items.slice(offset, offset + size);
+      if (offset > 0) slice[0] = items[offset - 1];
+      return { page: { items: slice, count: items.length, next: offset + size < items.length ? "more" : null } as LegislationPage, source: offset };
+    };
+    expect([1, 2, 3, 4].map(pageSize)).toEqual([250, 249, 247, 244]);
+    const list = await readWholeList("T000001 sponsored", readPage);
+    expect(list!.confirmed).toBe(true);
+    expect(list!.reads).toBe(4);
+    expect(parse(list!.pages).errors).toEqual([]);
+  });
+
   it("reports an unconfirmed list when the reads run out", async () => {
     const [a, b, x] = [item(1), item(2), item(3)];
     const passes = [[a, x, a], [b, a, b]];
@@ -286,6 +327,31 @@ describe("readWholeList", () => {
     const short = { pages: [{ items: [item(1)], count: 3, next: null }], reads: 12, confirmed: false };
     expect(unconfirmedError("T000001 sponsored", short)).toMatch(/still short after 12 reads \(1 of 3 items\)/);
     expect(unconfirmedError("T000001 sponsored", { ...short, confirmed: true })).toBeNull();
+    const noId = { ...short, pages: [{ items: [item(1), { congress: 119 }], count: 3, next: null }], doubled: [item(2).url] };
+    expect(unconfirmedError("T000001 sponsored", noId)).toMatch(/\(1 of 2 items\); 1 without an id/);
+  });
+
+  it("tells from an item's own record whether it names the member twice", () => {
+    const sponsor = { bioguideId: "D000622" };
+    expect(namesMemberTwice([{ bill: { sponsors: [sponsor, sponsor] } }], "sponsored", "D000622")).toBe(true);
+    expect(namesMemberTwice([{ amendment: { sponsors: [sponsor, sponsor] } }], "sponsored", "D000622")).toBe(true);
+    expect(namesMemberTwice([{ bill: { sponsors: [sponsor] } }], "sponsored", "D000622")).toBe(false);
+    expect(namesMemberTwice([{ cosponsors: [sponsor, { bioguideId: "X000001" }] }], "cosponsored", "D000622")).toBe(false);
+    expect(namesMemberTwice([], "sponsored", "D000622")).toBe(false);
+    // The same cosponsor row on both sides of a page boundary is a paging repeat, not a second cosponsorship.
+    const row = { bioguideId: "D000622", sponsorshipDate: "2025-02-01" };
+    expect(namesMemberTwice([{ cosponsors: [row] }, { cosponsors: [{ ...row }] }], "cosponsored", "D000622")).toBe(false);
+    const withdrawn = { ...row, sponsorshipWithdrawnDate: "2025-03-01" };
+    expect(namesMemberTwice([{ cosponsors: [withdrawn] }, { cosponsors: [{ ...row, sponsorshipDate: "2025-04-01" }] }], "cosponsored", "D000622")).toBe(true);
+  });
+
+  it("builds the record URL for a repeated item, and only on Congress.gov", () => {
+    const bill = "https://api.congress.gov/v3/bill/118/s/38";
+    expect(recordUrl(bill, "sponsored")).toBe(`${bill}?format=json&limit=250`);
+    expect(recordUrl(bill, "cosponsored")).toBe(`${bill}/cosponsors?format=json&limit=250`);
+    expect(recordUrl("https://api.congress.gov/v3/amendment/115/samdt/2778", "sponsored")).toBe("https://api.congress.gov/v3/amendment/115/samdt/2778?format=json&limit=250");
+    expect(recordUrl(bill, "sponsored", "http://localhost:9")).toBe("http://localhost:9/bill/118/s/38?format=json&limit=250");
+    expect(recordUrl("https://evil.example/v3/bill/118/s/38", "sponsored")).toBeNull();
   });
 
   it("refuses to keep paging past what the reported count allows", async () => {
