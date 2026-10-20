@@ -15,6 +15,7 @@ import {
   toMemberBills,
   MAX_READS,
   namesMemberTwice,
+  recordUrl,
   unconfirmedError,
   validateBillsSnapshot,
   type LegislationPage,
@@ -335,9 +336,22 @@ describe("readWholeList", () => {
     expect(namesMemberTwice([{ bill: { sponsors: [sponsor, sponsor] } }], "sponsored", "D000622")).toBe(true);
     expect(namesMemberTwice([{ amendment: { sponsors: [sponsor, sponsor] } }], "sponsored", "D000622")).toBe(true);
     expect(namesMemberTwice([{ bill: { sponsors: [sponsor] } }], "sponsored", "D000622")).toBe(false);
-    expect(namesMemberTwice([{ cosponsors: [sponsor] }, { cosponsors: [sponsor] }], "cosponsored", "D000622")).toBe(true);
     expect(namesMemberTwice([{ cosponsors: [sponsor, { bioguideId: "X000001" }] }], "cosponsored", "D000622")).toBe(false);
     expect(namesMemberTwice([], "sponsored", "D000622")).toBe(false);
+    // The same cosponsor row on both sides of a page boundary is a paging repeat, not a second cosponsorship.
+    const row = { bioguideId: "D000622", sponsorshipDate: "2025-02-01" };
+    expect(namesMemberTwice([{ cosponsors: [row] }, { cosponsors: [{ ...row }] }], "cosponsored", "D000622")).toBe(false);
+    const withdrawn = { ...row, sponsorshipWithdrawnDate: "2025-03-01" };
+    expect(namesMemberTwice([{ cosponsors: [withdrawn] }, { cosponsors: [{ ...row, sponsorshipDate: "2025-04-01" }] }], "cosponsored", "D000622")).toBe(true);
+  });
+
+  it("builds the record URL for a repeated item, and only on Congress.gov", () => {
+    const bill = "https://api.congress.gov/v3/bill/118/s/38";
+    expect(recordUrl(bill, "sponsored")).toBe(`${bill}?format=json&limit=250`);
+    expect(recordUrl(bill, "cosponsored")).toBe(`${bill}/cosponsors?format=json&limit=250`);
+    expect(recordUrl("https://api.congress.gov/v3/amendment/115/samdt/2778", "sponsored")).toBe("https://api.congress.gov/v3/amendment/115/samdt/2778?format=json&limit=250");
+    expect(recordUrl(bill, "sponsored", "http://localhost:9")).toBe("http://localhost:9/bill/118/s/38?format=json&limit=250");
+    expect(recordUrl("https://evil.example/v3/bill/118/s/38", "sponsored")).toBeNull();
   });
 
   it("refuses to keep paging past what the reported count allows", async () => {

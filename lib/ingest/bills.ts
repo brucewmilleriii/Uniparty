@@ -340,7 +340,20 @@ export function namesMemberTwice(bodies: unknown[], kind: LegislationKind, biogu
     const list = kind === "sponsored" ? record?.sponsors : b.cosponsors;
     return Array.isArray(list) ? list.filter(isObj) : [];
   });
-  return rows.filter((r) => str(r.bioguideId) === bioguideId).length >= 2;
+  const mine = rows.filter((r) => str(r.bioguideId) === bioguideId);
+  if (kind === "sponsored") return mine.length >= 2;
+  // The cosponsor list is paged by offset too, so an identical row may be a page-boundary
+  // repeat; a real second cosponsorship (withdrawn and signed again) differs in its dates.
+  return new Set(mine.map((r) => `${str(r.sponsorshipDate)}|${str(r.sponsorshipWithdrawnDate)}`)).size >= 2;
+}
+
+/**
+ * The first URL of the record namesMemberTwice reads for a list item, or null for a key
+ * that isn't a Congress.gov API URL (so our key is never sent elsewhere).
+ */
+export function recordUrl(item: string, kind: LegislationKind, base = API_BASE): string | null {
+  if (!item.startsWith(`${API_BASE}/`)) return null;
+  return `${item.replace(API_BASE, base)}${kind === "cosponsored" ? "/cosponsors" : ""}?format=json&limit=250`;
 }
 
 /** Next page of a bill's cosponsor list, if any. */

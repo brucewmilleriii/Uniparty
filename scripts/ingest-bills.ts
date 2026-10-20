@@ -31,6 +31,7 @@ import {
   cosponsorsNext,
   memberLegislationUrl,
   namesMemberTwice,
+  recordUrl,
   parseLegislation,
   readLegislationPage,
   readWholeList,
@@ -176,20 +177,26 @@ const missing: string[] = [];
 let reReadLists = 0;
 let extraReads = 0;
 
-/** Whether an item repeating in every read of a member's list is on its own record twice (see namesMemberTwice). */
-async function listsTwice(item: string, kind: LegislationKind, id: string): Promise<boolean> {
-  // The key is the item's API URL; anything else isn't sent our key.
-  if (!item.startsWith(`${API_BASE}/`)) return false;
+/**
+ * Whether an item repeating in every read of a member's list is on its own record twice
+ * (see namesMemberTwice). If so, the record's pages are kept in `sources`, since they
+ * are why the member's total is one less than Congress.gov's count.
+ */
+async function listsTwice(item: string, kind: LegislationKind, id: string, sources: MemberBills["sources"]): Promise<boolean> {
   const bodies: unknown[] = [];
-  let url: string | null = `${item.replace(API_BASE, base)}${kind === "cosponsored" ? "/cosponsors" : ""}?format=json&limit=250`;
+  const read: MemberBills["sources"] = [];
+  let url = recordUrl(item, kind, base);
   while (url && bodies.length < 20) {
     const res = await get(url);
     if (!res) break;
     bodies.push(res.body);
+    read.push({ url: publicUrl(url), sha256: sha(res.text) });
     const next = kind === "cosponsored" ? cosponsorsNext(res.body) : null;
     url = next ? next.replace(API_BASE, base) : null;
   }
-  return namesMemberTwice(bodies, kind, id);
+  const twice = namesMemberTwice(bodies, kind, id);
+  if (twice) sources.push(...read);
+  return twice;
 }
 
 /** Read one member list in full; see readWholeList for how gaps are filled. */
@@ -198,7 +205,7 @@ async function fetchList(id: string, kind: LegislationKind, sources: MemberBills
     const url = memberLegislationUrl(id, kind, offset, base, limit);
     const res = await get(url);
     return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
-  }, undefined, (item) => listsTwice(item, kind, id));
+  }, undefined, (item) => listsTwice(item, kind, id, sources));
   if (!list) return null;
   if (list.reads > 1) reReadLists++;
   extraReads += list.reads - 1;
