@@ -10,7 +10,11 @@
  *   npm run ingest:finance                         # fetch from the source
  *   npm run ingest:finance -- --check              # fetch and validate only; write nothing
  *   npm run ingest:finance -- --check --members 25 # same, for the first 25 members only
+ *   npm run ingest:finance -- --check --ids V000133,T000488 # same, for these members only
  *   npm run ingest:finance -- --force              # write even if nothing changed
+ *
+ * A campaign whose FEC figures don't add up is left out with the reason (see
+ * FinanceSnapshot.unverified); more than a few such campaigns fails the run.
  *
  * Exits non-zero, leaving the existing snapshot untouched, if anything fails validation.
  */
@@ -44,6 +48,7 @@ const arg = (name: string) => {
 const check = process.argv.includes("--check");
 const force = process.argv.includes("--force");
 const memberLimit = arg("--members") ? Number(arg("--members")) : Infinity;
+const onlyIds = arg("--ids")?.split(",").filter(Boolean);
 /** Overridable only to point the script at a local mock in testing. */
 const base = process.env.FEC_API_BASE ?? API_BASE;
 const fetchedAt = new Date().toISOString();
@@ -51,8 +56,12 @@ const cycle = fecCycle(new Date());
 
 const CONCURRENCY = 4;
 
-if (memberLimit !== Infinity && !check) {
-  console.error("--members only works with --check; a partial snapshot would drop everyone else.");
+if (process.argv.includes("--ids") && !onlyIds?.length) {
+  console.error("--ids needs at least one bioguide id.");
+  process.exit(1);
+}
+if ((memberLimit !== Infinity || onlyIds) && !check) {
+  console.error("--members and --ids only work with --check; a partial snapshot would drop everyone else.");
   process.exit(1);
 }
 
@@ -106,7 +115,8 @@ async function pool<T>(items: T[], fn: (item: T) => Promise<void>) {
 
 async function main() {
   const roster = JSON.parse(await readFile(ROSTER, "utf8")) as RosterSnapshot;
-  const members = roster.members.slice(0, memberLimit).map((m) => ({ ...m, fecIds: m.fecIds.filter(isCongressionalId) }));
+  const picked = onlyIds ? roster.members.filter((m) => onlyIds.includes(m.bioguideId)) : roster.members.slice(0, memberLimit);
+  const members = picked.map((m) => ({ ...m, fecIds: m.fecIds.filter(isCongressionalId) }));
   const withIds = members.filter((m) => m.fecIds.length);
   const ids = [...new Set(withIds.flatMap((m) => m.fecIds))];
 
@@ -119,6 +129,9 @@ async function main() {
 
   const errors: string[] = [];
   const sources: FinanceSnapshot["sources"] = [];
+  // Named ids are the point of the run, so each one must be in the roster.
+  const notInRoster = onlyIds?.filter((id) => !roster.members.some((m) => m.bioguideId === id)) ?? [];
+  if (notInRoster.length) errors.push(`--ids not in the roster: ${notInRoster.join(", ")}`);
 
   // Which candidates have totals this cycle, and the figures to cross-check against.
   const batch = new Map<string, BatchRow>();
@@ -136,6 +149,7 @@ async function main() {
 
   // Each of those candidates' full breakdown.
   const totals = new Map<string, CampaignTotals>();
+  const unverified: Record<string, string> = {};
   let done = 0;
   await pool([...batch.keys()], async (id) => {
     const url = candidateTotalsUrl(id, cycle, base);
@@ -147,6 +161,11 @@ async function main() {
     const p = parseCandidateTotals(res.body, id, cycle, batch.get(id), { sourceUrl: publicUrl(url), sha256: sha(res.text), fetchedAt });
     errors.push(...p.errors);
     if (p.totals) totals.set(id, p.totals);
+    // The FEC's own figures for this campaign don't add up; leave it out rather than show them.
+    if (p.unverified) {
+      unverified[id] = p.unverified;
+      console.log(`  Leaving out ${id}: ${p.unverified}`);
+    }
     if (++done % 100 === 0) console.log(`  ${done}/${batch.size} campaigns read`);
   });
 
@@ -165,6 +184,7 @@ async function main() {
     provenance: { ...FINANCE_SOURCE, fetchedAt, cycle },
     sources,
     members: Object.fromEntries(Object.entries(byMember).sort(([a], [b]) => a.localeCompare(b))),
+    ...(Object.keys(unverified).length ? { unverified: Object.fromEntries(Object.entries(unverified).sort(([a], [b]) => a.localeCompare(b))) } : {}),
   };
   const problems = validateFinanceSnapshot(
     snapshot,
@@ -178,7 +198,8 @@ async function main() {
   }
 
   const raised = [...totals.values()].reduce((n, c) => n + c.receipts, 0);
-  const summary = `${Object.keys(byMember).length} members, ${totals.size} campaigns, $${Math.round(raised).toLocaleString("en-US")} raised in ${cycle - 1}–${cycle}; ${remaining === Infinity ? "?" : remaining} API calls left this hour`;
+  const left = Object.keys(unverified).length;
+  const summary = `${Object.keys(byMember).length} members, ${totals.size} campaigns${left ? ` (${left} left out)` : ""}, $${Math.round(raised).toLocaleString("en-US")} raised in ${cycle - 1}–${cycle}; ${remaining === Infinity ? "?" : remaining} API calls left this hour`;
   if (check) {
     console.log(`Check passed: ${summary}. Nothing written.`);
     return;

@@ -22,6 +22,12 @@ export const MIN_COVERAGE = 0.8;
 /** Largest rounding gap, in dollars, allowed between figures that should be equal. */
 const TOLERANCE = 1;
 
+/**
+ * Campaigns whose FEC figures don't add up may be left out (see FinanceSnapshot.unverified),
+ * but more than this many in one run means something is wrong with the pull, not the filings.
+ */
+export const MAX_UNVERIFIED_CAMPAIGNS = 5;
+
 /** The batch endpoint: which of these candidates have totals in the cycle. The key goes in a header, never in a stored URL. */
 export const candidatesTotalsUrl = (ids: string[], cycle: number, base = API_BASE) =>
   `${base}/candidates/totals/?${ids.map((id) => `candidate_id=${id}`).join("&")}&cycle=${cycle}&election_full=false&per_page=${BATCH_SIZE}`;
@@ -121,6 +127,14 @@ export function readBatch(body: unknown, asked: string[], cycle: number): { rows
  * Read one candidate's /candidate/{id}/totals/ record for the cycle and check it:
  * every figure present and readable, the report's sub-totals adding up to its totals,
  * and the headline figures matching what the batch endpoint reported.
+ *
+ * A record that is the wrong shape, or for the wrong candidate or cycle, is an error. A
+ * well-formed record whose figures don't add up, or disagree with the batch totals, is the
+ * FEC's own data not adding up; it comes back as `unverified`, the reason it can't be shown.
+ *
+ * Line items can be negative. The FEC sums every report in the cycle, and a committee that
+ * refunds, reverses or corrects an earlier entry reports it as a negative amount, so a line
+ * can net below zero over the cycle.
  */
 export function parseCandidateTotals(
   body: unknown,
@@ -129,10 +143,10 @@ export function parseCandidateTotals(
   batch: BatchRow | undefined,
   meta: { sourceUrl: string; sha256: string; fetchedAt: string },
   today = new Date(),
-): { totals: CampaignTotals | null; errors: string[] } {
+): { totals: CampaignTotals | null; errors: string[]; unverified: string | null } {
   const at = `${candidateId} ${cycle}`;
   const rows = readResults(body, `candidate/${candidateId}/totals`);
-  if (rows.length !== 1) return { totals: null, errors: [`${at}: expected one totals record, got ${rows.length}`] };
+  if (rows.length !== 1) return { totals: null, errors: [`${at}: expected one totals record, got ${rows.length}`], unverified: null };
   const r = rows[0];
   const errors: string[] = [];
   if (str(r.candidate_id) !== candidateId) errors.push(`${at}: record is for ${str(r.candidate_id) || "no candidate"}`);
@@ -168,18 +182,21 @@ export function parseCandidateTotals(
   for (const [k, f] of Object.entries(fields) as [keyof typeof fields, string][]) {
     n[k] = amount(r[f]);
     if (!Number.isFinite(n[k])) errors.push(`${at}: ${f} is missing or unreadable (${JSON.stringify(r[f])})`);
-    else if (n[k] < 0 && k !== "cashOnHand") errors.push(`${at}: ${f} is negative (${n[k]})`);
   }
 
   const start = str(r.coverage_start_date).slice(0, 10);
   const end = str(r.coverage_end_date).slice(0, 10);
   if (!isDate(start) || !isDate(end) || start > end) errors.push(`${at}: unreadable coverage dates ${start} to ${end}`);
   else {
-    if (Number(start.slice(0, 4)) < cycle - 1 || Number(end.slice(0, 4)) > cycle) errors.push(`${at}: coverage ${start} to ${end} falls outside the ${cycle - 1}–${cycle} cycle`);
+    // A report counts toward the cycle its coverage ends in. The first one can start late in the
+    // year before: the post-general report closes in late November, and the next begins the day after.
+    if (Number(start.slice(0, 4)) < cycle - 2 || Number(end.slice(0, 4)) < cycle - 1 || Number(end.slice(0, 4)) > cycle) errors.push(`${at}: coverage ${start} to ${end} falls outside the ${cycle - 1}–${cycle} cycle`);
     if (Date.parse(end) > today.getTime() + 86_400_000) errors.push(`${at}: coverage ends in the future (${end})`);
   }
-  if (errors.length) return { totals: null, errors };
+  if (errors.length) return { totals: null, errors, unverified: null };
+  if (!batch) return { totals: null, errors: [`${at}: not in the candidates/totals results`], unverified: null };
 
+  const mismatches: string[] = [];
   // Form 3's own arithmetic: line 11(a)(iii), 11(e), 13(c), 16 and 22.
   const sums: [string, number, number][] = [
     ["individual contributions", n.individual, n.individualItemized + n.individualUnitemized],
@@ -189,28 +206,26 @@ export function parseCandidateTotals(
     ["total disbursements", n.disbursements, n.operating + n.transfersOut + n.loanRepayments + n.refunds + n.otherDisbursements],
   ];
   for (const [what, total, parts] of sums)
-    if (Math.abs(total - parts) > TOLERANCE) errors.push(`${at}: ${what} ${usd(total)} don't equal the sum of their lines, ${usd(parts)}`);
+    if (Math.abs(total - parts) > TOLERANCE) mismatches.push(`${what} ${usd(total)} don't equal the sum of their lines, ${usd(parts)}`);
 
-  if (!batch) errors.push(`${at}: not in the candidates/totals results`);
-  else {
-    const pairs: [string, number, number][] = [
-      ["receipts", n.receipts, batch.receipts],
-      ["disbursements", n.disbursements, batch.disbursements],
-      ["cash on hand", n.cashOnHand, batch.cashOnHand],
-      ["itemized individual contributions", n.individualItemized, batch.individualItemized],
-      ["PAC and other committee contributions", n.otherCommittees, batch.otherCommittees],
-      ["transfers in", n.transfersIn, batch.transfersIn],
-    ];
-    for (const [what, detail, summary] of pairs)
-      if (!Number.isFinite(summary) || Math.abs(detail - summary) > TOLERANCE) errors.push(`${at}: ${what} is ${usd(detail)} in the candidate record but ${usd(summary)} in candidates/totals`);
-    if (batch.coverageEnd !== end) errors.push(`${at}: coverage ends ${end} in the candidate record but ${batch.coverageEnd} in candidates/totals`);
-  }
-  if (errors.length) return { totals: null, errors };
+  const pairs: [string, number, number][] = [
+    ["receipts", n.receipts, batch.receipts],
+    ["disbursements", n.disbursements, batch.disbursements],
+    ["cash on hand", n.cashOnHand, batch.cashOnHand],
+    ["itemized individual contributions", n.individualItemized, batch.individualItemized],
+    ["PAC and other committee contributions", n.otherCommittees, batch.otherCommittees],
+    ["transfers in", n.transfersIn, batch.transfersIn],
+  ];
+  for (const [what, detail, summary] of pairs)
+    if (!Number.isFinite(summary) || Math.abs(detail - summary) > TOLERANCE) mismatches.push(`${what} is ${usd(detail)} in the candidate record but ${usd(summary)} in candidates/totals`);
+  if (batch.coverageEnd !== end) mismatches.push(`coverage ends ${end} in the candidate record but ${batch.coverageEnd} in candidates/totals`);
+  if (mismatches.length) return { totals: null, errors, unverified: mismatches.join("; ") };
 
   const reportType = str(r.last_report_type_full);
   const reportYear = Number(r.last_report_year);
   return {
     errors,
+    unverified: null,
     totals: {
       candidateId,
       office: candidateId[0] === "S" ? "S" : "H",
@@ -271,23 +286,30 @@ export function toMemberFinance(m: Pick<Member, "chamber">, candidateIds: string
 export const financeFingerprint = (s: FinanceSnapshot) =>
   `${s.provenance.cycle}:${Object.entries(s.members)
     .map(([id, m]) => `${id}[${m.candidateIds.join(",")}]=${m.campaigns.map((c) => c.sha256).join("+")}`)
-    .join()}`;
+    .join()}|left out:${Object.keys(s.unverified ?? {}).sort().join()}`;
 
-export type MemberFinanceStatus = "ok" | "no-ids" | "not-covered";
+export type MemberFinanceStatus = "ok" | "no-ids" | "not-covered" | "unverified";
 
 /**
  * What can be said about a member's money, given the last pull's entry for them (undefined
  * when the pull didn't include them). Only a member whose every current candidate id the pull
  * asked about can be said to have filed nothing, and only campaigns for their current ids are shown.
+ * A campaign the pull left out because its FEC figures didn't add up (`unverified`, keyed by
+ * candidate id) is never shown; when it is the campaign for the member's seat, nothing is shown
+ * in its place, so another campaign isn't mistaken for it.
  */
 export function memberFinanceStatus(
   m: Pick<Member, "chamber" | "fecIds">,
   entry: MemberFinance | undefined,
-): { status: MemberFinanceStatus; campaigns: CampaignTotals[] } {
+  unverified: Record<string, string> = {},
+): { status: MemberFinanceStatus; campaigns: CampaignTotals[]; unverified?: string } {
   const ids = m.fecIds.filter(isCongressionalId);
   if (!ids.length) return { status: "no-ids", campaigns: [] };
   if (!entry || ids.some((id) => !entry.candidateIds.includes(id))) return { status: "not-covered", campaigns: [] };
-  const current = entry.campaigns.filter((c) => ids.includes(c.candidateId));
+  const seat = m.chamber === "senate" ? "S" : "H";
+  const seatUnverified = ids.find((id) => id[0] === seat && unverified[id]);
+  if (seatUnverified) return { status: "unverified", campaigns: [], unverified: unverified[seatUnverified] };
+  const current = entry.campaigns.filter((c) => ids.includes(c.candidateId) && !unverified[c.candidateId]);
   return { status: "ok", campaigns: toMemberFinance(m, ids, current, entry.fetchedAt).campaigns };
 }
 
@@ -334,11 +356,22 @@ export function campaignFromRow(r: Record<string, unknown>): CampaignTotals {
 export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: string[], previous: FinanceSnapshot | null): string[] {
   const errors: string[] = [];
   const { cycle } = snap.provenance;
-  const covered = membersWithIds.filter((id) => snap.members[id]?.campaigns.length).length;
+  const unverified = snap.unverified ?? {};
+  // A member whose campaign was left out did file reports; the FEC's figures just didn't add up.
+  const covered = membersWithIds.filter((id) => snap.members[id]?.campaigns.length || snap.members[id]?.candidateIds.some((c) => unverified[c])).length;
   if (membersWithIds.length && covered / membersWithIds.length < MIN_COVERAGE)
     errors.push(`Only ${covered} of ${membersWithIds.length} members have ${cycle - 1}–${cycle} reports; source looks partial`);
 
   if (snap.sources.some((s) => !/^[0-9a-f]{64}$/.test(s.sha256) || !s.url.startsWith(API_BASE))) errors.push("A batch source has no hash or URL");
+  const left = Object.keys(unverified);
+  if (left.length > MAX_UNVERIFIED_CAMPAIGNS)
+    errors.push(`${left.length} campaigns left out because their FEC figures don't add up (more than ${MAX_UNVERIFIED_CAMPAIGNS}): ${left.join(", ")}`);
+  const asked = new Set(Object.values(snap.members).flatMap((m) => m.candidateIds));
+  for (const id of left) {
+    if (!unverified[id].trim()) errors.push(`${id} is left out with no reason`);
+    if (!asked.has(id)) errors.push(`${id} is left out but wasn't one of the ids asked about`);
+  }
+
   const owner = new Map<string, string>();
   // Within one cycle a campaign's reports only accumulate, so compare with the last good pull.
   const prevEnd = new Map<string, { member: string; end: string }>();
@@ -351,6 +384,7 @@ export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: s
       if (!m.candidateIds.includes(c.candidateId)) errors.push(`${id}: ${c.candidateId} wasn't one of the ids asked about`);
       if (!/^[0-9a-f]{64}$/.test(c.sha256) || !c.sourceUrl.startsWith(API_BASE) || !c.pageUrl.startsWith("https://www.fec.gov/"))
         errors.push(`${id}: ${c.candidateId} has no source hash or URL`);
+      if (unverified[c.candidateId]) errors.push(`${id}: ${c.candidateId} is both published and left out as unverified`);
       const other = owner.get(c.candidateId);
       if (other) errors.push(`${c.candidateId} is credited to both ${other} and ${id}`);
       owner.set(c.candidateId, id);
@@ -361,7 +395,7 @@ export function validateFinanceSnapshot(snap: FinanceSnapshot, membersWithIds: s
   // Only while the member is still current and still linked to the id: an id the roster has
   // since unlinked is never asked about again, and must not block every later run.
   for (const [candidateId, { member }] of prevEnd)
-    if (snap.members[member]?.candidateIds.includes(candidateId) && !owner.has(candidateId))
+    if (snap.members[member]?.candidateIds.includes(candidateId) && !owner.has(candidateId) && !unverified[candidateId])
       errors.push(`${member}: ${candidateId} had ${cycle - 1}–${cycle} reports at the last pull but none now`);
   const urls = [...snap.sources.map((s) => s.url), ...Object.values(snap.members).flatMap((m) => m.campaigns.map((c) => c.sourceUrl))];
   if (urls.some((u) => /api_key/i.test(u))) errors.push("An API key is in a stored URL");

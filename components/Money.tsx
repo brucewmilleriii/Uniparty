@@ -43,6 +43,14 @@ export default function Money({ finance, lastName, allUrl }: { finance: MemberFi
             see their filings on fec.gov ↗
           </a>
         </p>
+      ) : finance.status === "unverified" ? (
+        <p className="panel-note">
+          At the last pull, the FEC’s own figures for {lastName}’s campaign didn’t add up (its report lines don’t sum to its
+          totals, or two FEC sources disagree), so we aren’t showing them here.{" "}
+          <a href={allUrl} target="_blank" rel="noopener">
+            See {lastName}’s filings on fec.gov ↗
+          </a>
+        </p>
       ) : !main ? (
         <p className="panel-note">
           {lastName}’s campaign filed no reports with the FEC for the {cycle} cycle.{" "}
@@ -77,10 +85,15 @@ export default function Money({ finance, lastName, allUrl }: { finance: MemberFi
 }
 
 function Campaign({ c }: { c: CampaignTotals }) {
-  const parts = receiptParts(c).filter((p) => p.amount > 0);
+  // A line can net below zero over the cycle (refunds and corrections), so the table lists every
+  // non-zero line, and the bar shows the positive ones as shares of their own sum.
+  const parts = receiptParts(c).filter((p) => p.amount !== 0);
+  const positive = parts.filter((p) => p.amount > 0);
+  const positiveSum = positive.reduce((n, p) => n + p.amount, 0);
   const share = (n: number) => (c.receipts > 0 ? n / c.receipts : 0);
   const pct = (n: number) => {
     const p = share(n) * 100;
+    if (p < 0) return p > -1 ? ">−1%" : `−${Math.round(-p)}%`;
     return p > 0 && p < 1 ? "<1%" : `${Math.round(p)}%`;
   };
 
@@ -113,8 +126,8 @@ function Campaign({ c }: { c: CampaignTotals }) {
         <>
           <div className="h4">Where the money came from</div>
           <div className="mbar" aria-hidden="true">
-            {parts.map((p) => (
-              <i key={p.key} className={`m-${p.key}`} style={{ width: `${share(p.amount) * 100}%` }} />
+            {positive.map((p) => (
+              <i key={p.key} className={`m-${p.key}`} style={{ width: `${(p.amount / positiveSum) * 100}%` }} />
             ))}
           </div>
           <div className="scroll">

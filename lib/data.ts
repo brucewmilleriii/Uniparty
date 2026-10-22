@@ -285,9 +285,12 @@ export interface MemberFinanceView {
    * "ok": the last pull covered this member, and `campaigns` lists what it found (the seat's campaign first;
    * empty when nothing was filed). "no-ids": the roster links no House or Senate FEC candidate id to them.
    * "not-covered": they have ids but the last pull didn't include them (they joined the roster since).
+   * "unverified": the FEC's figures for the campaign for their seat didn't add up at the last pull.
    */
   status: MemberFinanceStatus;
   campaigns: CampaignTotals[];
+  /** Why the seat's campaign was left out, when `status` is "unverified". */
+  unverified?: string;
   source: string;
   sourceHome: string;
   fetchedAt: string | null;
@@ -297,7 +300,7 @@ const localFinance = financeSnapshot as unknown as FinanceSnapshot;
 
 function financeFromSnapshot(m: Member): MemberFinanceView {
   const { cycle, fetchedAt, source, sourceHome } = localFinance.provenance;
-  return { cycle, ...memberFinanceStatus(m, localFinance.members[m.bioguideId]), source, sourceHome, fetchedAt };
+  return { cycle, ...memberFinanceStatus(m, localFinance.members[m.bioguideId], localFinance.unverified), source, sourceHome, fetchedAt };
 }
 
 async function financeFromSupabase(m: Member, url: string, key: string): Promise<MemberFinanceView> {
@@ -315,7 +318,9 @@ async function financeFromSupabase(m: Member, url: string, key: string): Promise
   const entry = covered.data
     ? { candidateIds: covered.data.candidate_ids as string[], campaigns: rows.data.map(campaignFromRow), fetchedAt: covered.data.fetched_at }
     : undefined;
-  return { cycle, ...memberFinanceStatus(m, entry), source, sourceHome, fetchedAt: run.data?.fetched_at ?? null };
+  // Supabase holds only published campaigns (and may keep an earlier pull's row for one left out
+  // since); the committed snapshot says which were left out.
+  return { cycle, ...memberFinanceStatus(m, entry, localFinance.unverified), source, sourceHome, fetchedAt: run.data?.fetched_at ?? null };
 }
 
 /** A member's campaign money for the current two-year cycle, from the FEC. */
