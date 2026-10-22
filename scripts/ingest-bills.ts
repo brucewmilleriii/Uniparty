@@ -30,6 +30,7 @@ import {
   checkSponsor,
   cosponsorsNext,
   memberLegislationUrl,
+  itemKey,
   namesMemberTwice,
   recordUrl,
   parseLegislation,
@@ -200,21 +201,49 @@ async function listsTwice(item: string, kind: LegislationKind, id: string, sourc
   return twice;
 }
 
-/** Read one member list in full; see readWholeList for how gaps are filled. */
-async function fetchList(id: string, kind: LegislationKind, sources: MemberBills["sources"]): Promise<{ pages: LegislationPage[]; doubled: number } | null> {
+/**
+ * Read one member list in full; see readWholeList for how gaps are filled. `unconfirmed`
+ * says why the list can't be published, if it never added up.
+ */
+async function fetchList(
+  id: string,
+  kind: LegislationKind,
+  sources: MemberBills["sources"],
+): Promise<{ pages: LegislationPage[]; doubled: number; unconfirmed: string | null } | null> {
+  // Per-read tallies, logged if the list never confirms, to show how it falls short.
+  const passes: { limit: number; count: number; rows: number; keys: Set<string> }[] = [];
+  const checks = new Map<string, boolean>();
   const list = await readWholeList(`${id} ${kind}`, async (offset, limit) => {
     const url = memberLegislationUrl(id, kind, offset, base, limit);
     const res = await get(url);
-    return res && { page: readLegislationPage(res.body, kind), source: { url: publicUrl(url), sha256: sha(res.text) } };
-  }, undefined, (item) => listsTwice(item, kind, id, sources));
+    if (!res) return null;
+    const page = readLegislationPage(res.body, kind);
+    if (offset === 0) passes.push({ limit, count: page.count, rows: 0, keys: new Set() });
+    const pass = passes[passes.length - 1];
+    pass.rows += page.items.length;
+    for (const item of page.items) pass.keys.add(itemKey(item));
+    return { page, source: { url: publicUrl(url), sha256: sha(res.text) } };
+  }, undefined, async (item) => {
+    const twice = await listsTwice(item, kind, id, sources);
+    checks.set(item, twice);
+    return twice;
+  });
   if (!list) return null;
   if (list.reads > 1) reReadLists++;
   extraReads += list.reads - 1;
   const unconfirmed = unconfirmedError(`${id} ${kind}`, list);
-  if (unconfirmed) errors.push(unconfirmed);
+  if (unconfirmed) {
+    const all = new Set(passes.flatMap((p) => [...p.keys]));
+    console.log(`  ${id} ${kind} never confirmed; ${all.size} distinct items over all reads.`);
+    for (const p of passes) console.log(`    limit ${p.limit}: count ${p.count}, ${p.rows} rows, ${p.keys.size} distinct`);
+    const inEvery = [...all].filter((k) => passes.every((p) => p.keys.has(k)));
+    const notInAny = passes.map((p) => all.size - p.keys.size);
+    console.log(`    in every read: ${inEvery.length}; missing per read: ${notInAny.join(", ")}`);
+    if (checks.size) console.log(`    record checks: ${[...checks].map(([k, v]) => `${k} ${v ? "twice" : "once"}`).slice(0, 10).join("; ")}${checks.size > 10 ? ` (+${checks.size - 10} more)` : ""}`);
+  }
   sources.push(...list.sources);
   if (list.doubled.length) console.log(`  ${id} ${kind}: Congress.gov lists ${list.doubled.join(", ")} twice`);
-  return { pages: list.pages, doubled: list.doubled.length };
+  return { pages: list.pages, doubled: list.doubled.length, unconfirmed };
 }
 
 async function main() {
@@ -234,6 +263,7 @@ async function main() {
 
   const bills: Record<string, Bill> = {};
   const members: Record<string, MemberBills> = {};
+  const unverified: Record<string, string> = {};
   const samples: { kind: LegislationKind; id: string; link: ParsedLink }[] = [];
   let done = 0;
   let outOfTime = false;
@@ -251,6 +281,15 @@ async function main() {
       missing.push(id);
       return;
     }
+    // Congress.gov sometimes reports more items than any read of a list returns. Such a
+    // member is left out, with the reason, rather than shown with a list we can't vouch for.
+    const why = [sp.unconfirmed, co.unconfirmed].filter((w): w is string => !!w);
+    if (why.length) {
+      unverified[id] = why.join("; ");
+      console.log(`  Leaving out ${id}: ${unverified[id]}`);
+      done++;
+      return;
+    }
     const s = parseLegislation(sp.pages, "sponsored", id, congress, undefined, sp.doubled);
     const c = parseLegislation(co.pages, "cosponsored", id, congress, undefined, co.doubled);
     errors.push(...s.errors, ...c.errors);
@@ -260,6 +299,8 @@ async function main() {
     if (++done % 50 === 0) console.log(`  ${done}/${ids.length} members read; ${calls} calls, ${reReadLists} lists read again (${extraReads} extra reads)`);
   });
   console.log(`Read ${done} members for the ${congress}th Congress; ${missing.length} not on Congress.gov${missing.length ? ` (${missing.join(", ")})` : ""}.`);
+  const left = Object.keys(unverified).sort();
+  if (left.length) console.log(`Left out ${left.length} whose Congress.gov lists never added up: ${left.join(", ")}.`);
   if (onlyIds && missing.length) errors.push(`--ids not found on Congress.gov: ${missing.join(", ")}`);
 
   // Re-read a random sample of bills from their own records.
@@ -306,6 +347,7 @@ async function main() {
     provenance: { ...BILLS_SOURCE, fetchedAt, congress, window: BILL_WINDOW },
     bills: Object.fromEntries(Object.entries(bills).sort(([a], [b]) => a.localeCompare(b))),
     members: Object.fromEntries(Object.entries(members).sort(([a], [b]) => a.localeCompare(b))),
+    ...(left.length ? { unverified: Object.fromEntries(left.map((id) => [id, unverified[id]])) } : {}),
   };
   const problems = validateBillsSnapshot(snapshot, ids, prev);
   if (problems.length) {
@@ -315,13 +357,14 @@ async function main() {
   }
 
   const total = (k: "sponsoredCount" | "cosponsoredCount") => Object.values(members).reduce((n, m) => n + m[k], 0);
-  const summary = `${Object.keys(members).length} members, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made, ${reReadLists} lists read again to fill gaps (${extraReads} extra reads)`;
+  const summary = `${Object.keys(members).length} members${left.length ? ` (${left.length} left out)` : ""}, ${total("sponsoredCount")} sponsored and ${total("cosponsoredCount")} cosponsorships in the ${congress}th Congress, ${Object.keys(bills).length} bills kept; ${calls} API calls made, ${reReadLists} lists read again to fill gaps (${extraReads} extra reads)`;
   if (check) {
     console.log(`Check passed: ${summary}. Nothing written.`);
     return;
   }
   // Skip the write when nothing changed, so the scheduled job only commits (and redeploys) on new data.
-  const fingerprint = (s: BillsSnapshot) => Object.values(s.members).flatMap((m) => m.sources.map((x) => x.sha256)).join();
+  const fingerprint = (s: BillsSnapshot) =>
+    [...Object.values(s.members).flatMap((m) => m.sources.map((x) => x.sha256)), ...Object.keys(s.unverified ?? {})].join();
   if (prev && fingerprint(prev) === fingerprint(snapshot) && !force) {
     console.log(`No changes since ${prev.provenance.fetchedAt}; snapshot left as is.`);
   } else {

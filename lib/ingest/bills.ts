@@ -13,6 +13,12 @@ export const BILL_WINDOW = 10;
 /** Members Congress.gov may not list yet (just sworn in) before the run counts as failed. */
 export const MAX_MISSING_MEMBERS = 3;
 
+/**
+ * Members whose lists Congress.gov never returns in full (see BillsSnapshot.unverified)
+ * that a run may leave out; more than this looks like a fault in the run, not the data.
+ */
+export const MAX_UNVERIFIED_MEMBERS = 5;
+
 export const BILLS_SOURCE = { source: "Congress.gov", sourceHome: "https://www.congress.gov/" } as const;
 
 export const API_BASE = "https://api.congress.gov/v3";
@@ -180,7 +186,7 @@ export async function readWholeList<S>(
 /**
  * The error for a list readWholeList couldn't confirm, or null if it was confirmed. A
  * complete-but-unconfirmed list passes parseLegislation's count checks, so this error is
- * what keeps it from being published; callers must add it to their errors.
+ * what keeps it from being published; callers must fail on it or leave the member out.
  */
 export function unconfirmedError(at: string, list: { pages: LegislationPage[]; reads: number; confirmed: boolean; doubled?: string[] }): string | null {
   if (list.confirmed) return null;
@@ -391,8 +397,15 @@ export function toMemberBills(
  */
 export function validateBillsSnapshot(snap: BillsSnapshot, rosterIds: string[], previous: BillsSnapshot | null): string[] {
   const errors: string[] = [];
-  const missing = rosterIds.filter((id) => !snap.members[id]);
+  const unverified = snap.unverified ?? {};
+  const missing = rosterIds.filter((id) => !snap.members[id] && !unverified[id]);
   if (missing.length > MAX_MISSING_MEMBERS) errors.push(`${missing.length} members have no bill record (${missing.slice(0, 5).join(", ")})`);
+  const left = Object.keys(unverified);
+  if (left.length > MAX_UNVERIFIED_MEMBERS) errors.push(`${left.length} members' lists never added up (${left.slice(0, 5).join(", ")})`);
+  for (const id of left) {
+    if (snap.members[id]) errors.push(`${id} is both published and left out as unverified`);
+    if (!unverified[id].trim()) errors.push(`${id} is left out with no reason`);
+  }
 
   const sponsorOf = new Map<string, string>();
   for (const [id, m] of Object.entries(snap.members)) {

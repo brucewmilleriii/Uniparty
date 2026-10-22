@@ -187,7 +187,7 @@ export interface MemberBillRow {
 
 export interface MemberBillsView {
   congress: number;
-  /** Null when Congress.gov had no record of this member at the last pull. */
+  /** Null when Congress.gov had no record of this member at the last pull, or `unverified` is set. */
   sponsoredCount: number | null;
   cosponsoredCount: number | null;
   sponsored: MemberBillRow[];
@@ -195,6 +195,8 @@ export interface MemberBillsView {
   source: string;
   sourceHome: string;
   fetchedAt: string | null;
+  /** Why this member was left out of the last pull: a Congress.gov list of theirs never added up. */
+  unverified: string | null;
 }
 
 const localBills = billsSnapshot as unknown as BillsSnapshot;
@@ -212,6 +214,7 @@ function billsFromSnapshot(m: Member): MemberBillsView {
     source,
     sourceHome,
     fetchedAt,
+    unverified: localBills.unverified?.[m.bioguideId] ?? null,
   };
 }
 
@@ -256,6 +259,8 @@ async function billsFromSupabase(m: Member, url: string, key: string): Promise<M
     source,
     sourceHome,
     fetchedAt: run.data?.fetched_at ?? null,
+    // Supabase holds only published members; the committed snapshot says who was left out.
+    unverified: localBills.unverified?.[m.bioguideId] ?? null,
   };
 }
 
