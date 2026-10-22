@@ -120,31 +120,52 @@ describe("parseCandidateTotals", () => {
   });
 
   it("passes the line arithmetic and the cross-check for every fixture", () => {
-    for (const id of ["H8CA05035", "S6MN00267", "S4VT00033"]) expect(parse(id).errors).toEqual([]);
+    for (const id of ["H8CA05035", "S6MN00267", "S4VT00033"]) expect(parse(id)).toMatchObject({ errors: [], unverified: null });
     expect(parse("S4VT00033").totals).toMatchObject({ office: "S", electionYear: 2030, receipts: 26324335.09 });
   });
 
-  it("rejects a record whose lines don't add up to its totals", () => {
-    expect(parse("H8CA05035", withField("H8CA05035", "individual_unitemized_contributions", 1411000)).errors.join()).toMatch(/individual contributions .* don't equal/);
-    expect(parse("H8CA05035", withField("H8CA05035", "other_receipts", 50000)).errors.join()).toMatch(/total receipts/);
-    expect(parse("H8CA05035", withField("H8CA05035", "other_disbursements", 0)).errors.join()).toMatch(/total disbursements/);
-    expect(parse("H8CA05035", withField("H8CA05035", "loans_made_by_candidate", 5000)).errors.join()).toMatch(/loans/);
+  it("leaves out, with the reason, a record whose lines don't add up to its totals", () => {
+    // As H8NJ02166's did on 2026-10-18: individual contributions $1,000 off the sum of their lines.
+    const off = parse("H8CA05035", withField("H8CA05035", "individual_unitemized_contributions", 1411000));
+    expect(off).toMatchObject({ totals: null, errors: [] });
+    expect(off.unverified).toMatch(/^individual contributions .* don't equal/);
+    expect(parse("H8CA05035", withField("H8CA05035", "other_receipts", 50000)).unverified).toMatch(/total receipts/);
+    expect(parse("H8CA05035", withField("H8CA05035", "other_disbursements", 0)).unverified).toMatch(/total disbursements/);
+    expect(parse("H8CA05035", withField("H8CA05035", "loans_made_by_candidate", 5000)).unverified).toMatch(/loans/);
   });
 
-  it("rejects a record that disagrees with the batch totals", () => {
+  it("leaves out, with the reason, a record that disagrees with the batch totals", () => {
     const row = { ...batchRow("H8CA05035")!, receipts: 2467000 };
-    expect(parse("H8CA05035", undefined, row).errors.join()).toMatch(/receipts is \$2,467,978.64 in the candidate record but \$2,467,000.00/);
+    const r = parse("H8CA05035", undefined, row);
+    expect(r).toMatchObject({ totals: null, errors: [] });
+    expect(r.unverified).toMatch(/receipts is \$2,467,978.64 in the candidate record but \$2,467,000.00/);
     const late = { ...batchRow("H8CA05035")!, coverageEnd: "2026-06-30" };
-    expect(parse("H8CA05035", undefined, late).errors.join()).toMatch(/coverage ends 2026-09-30 .* but 2026-06-30/);
+    expect(parse("H8CA05035", undefined, late).unverified).toMatch(/coverage ends 2026-09-30 .* but 2026-06-30/);
     expect(parseCandidateTotals(fixture("candidate-H8CA05035.json"), "H8CA05035", 2026, undefined, meta("H8CA05035"), today).errors.join()).toMatch(/not in the candidates\/totals results/);
   });
 
-  it("rejects the wrong candidate, the wrong cycle, whole-election totals, and missing or negative figures", () => {
+  it("accepts lines that net below zero over the cycle, as long as they still add up", () => {
+    // As H2WA03217's debts and H6PA16320's refunds did on 2026-10-18.
+    expect(parse("H8CA05035", withField("H8CA05035", "last_debts_owed_by_committee", -2500))).toMatchObject({ errors: [], unverified: null, totals: { debts: -2500 } });
+    const [r] = fixture("candidate-H8CA05035.json").results as Record<string, unknown>[];
+    const body = { ...fixture("candidate-H8CA05035.json"), results: [{ ...r, contribution_refunds: -500, other_disbursements: Number(r.other_disbursements) + Number(r.contribution_refunds) + 500 }] };
+    expect(parse("H8CA05035", body)).toMatchObject({ errors: [], unverified: null });
+  });
+
+  it("accepts a first report that starts after the previous cycle's post-general report", () => {
+    // As H6FL06258's and H6FL01390's did on 2026-10-18 (coverage from 2024-11-26 and 2024-12-03).
+    expect(parse("H8CA05035", withField("H8CA05035", "coverage_start_date", "2024-11-26T00:00:00"))).toMatchObject({ errors: [], unverified: null, totals: { coverageStart: "2024-11-26" } });
+    expect(parse("H8CA05035", withField("H8CA05035", "coverage_start_date", "2023-07-01T00:00:00")).errors.join()).toMatch(/outside the 2025–2026 cycle/);
+    const [r] = fixture("candidate-H8CA05035.json").results as Record<string, unknown>[];
+    const before = { ...fixture("candidate-H8CA05035.json"), results: [{ ...r, coverage_start_date: "2024-11-26T00:00:00", coverage_end_date: "2024-12-31T00:00:00" }] };
+    expect(parse("H8CA05035", before).errors.join()).toMatch(/outside the 2025–2026 cycle/);
+  });
+
+  it("rejects the wrong candidate, the wrong cycle, whole-election totals, and missing figures", () => {
     expect(parse("S6MN00267", fixture("candidate-H8CA05035.json")).errors.join()).toMatch(/record is for H8CA05035/);
     expect(parse("H8CA05035", withField("H8CA05035", "cycle", 2024)).errors.join()).toMatch(/cycle 2024/);
     expect(parse("H8CA05035", withField("H8CA05035", "election_full", true)).errors.join()).toMatch(/whole election/);
     expect(parse("H8CA05035", withField("H8CA05035", "receipts", null)).errors.join()).toMatch(/receipts is missing/);
-    expect(parse("H8CA05035", withField("H8CA05035", "loans", -5)).errors.join()).toMatch(/loans is negative/);
     expect(parse("H8CA05035", withField("H8CA05035", "coverage_end_date", "2027-03-31T00:00:00")).errors.join()).toMatch(/outside the 2025–2026 cycle/);
   });
 });
@@ -192,6 +213,14 @@ describe("memberFinanceStatus", () => {
   it("tells apart a member with no House or Senate FEC id", () => {
     expect(memberFinanceStatus({ chamber: "house", fecIds: [] }, undefined).status).toBe("no-ids");
     expect(memberFinanceStatus({ chamber: "senate", fecIds: ["P60007168"] }, undefined).status).toBe("no-ids");
+  });
+
+  it("shows nothing for a member whose seat's campaign was left out, and drops another left-out campaign", () => {
+    const m = { chamber: "house" as const, fecIds: ["H8CA05035", "S4VT00033"] };
+    const entry = { candidateIds: ["H8CA05035", "S4VT00033"], campaigns: [house(), senate()], fetchedAt };
+    // Supabase may still hold an earlier pull's row for a campaign left out since, so it's in `campaigns` here.
+    expect(memberFinanceStatus(m, entry, { H8CA05035: "off" })).toEqual({ status: "unverified", campaigns: [], unverified: "off" });
+    expect(memberFinanceStatus(m, entry, { S4VT00033: "off" })).toEqual({ status: "ok", campaigns: [house()] });
   });
 
   it("puts the seat's campaign first", () => {
@@ -278,6 +307,34 @@ describe("validateFinanceSnapshot", () => {
     expect(validateFinanceSnapshot(snap, ids, prev).join()).not.toMatch(/S6MN00267/);
   });
 
+  it("accepts a few campaigns left out with a reason, but not too many, nor one also published", () => {
+    const snap = build();
+    snap.members.V000133 = toMemberFinance({ chamber: "house" }, ["H8NJ02166"], [], fetchedAt);
+    snap.unverified = { H8NJ02166: "individual contributions $1,870,731.43 don't equal the sum of their lines, $1,871,731.43" };
+    expect(validateFinanceSnapshot(snap, [...ids, "V000133"], null)).toEqual([]);
+
+    snap.unverified.H8NJ02166 = " ";
+    expect(validateFinanceSnapshot(snap, [...ids, "V000133"], null).join()).toMatch(/H8NJ02166 is left out with no reason/);
+    snap.unverified = { H8CA05035: "off" };
+    expect(validateFinanceSnapshot(snap, [...ids, "V000133"], null).join()).toMatch(/P000197: H8CA05035 is both published and left out/);
+    snap.unverified = { H9XX00001: "off" };
+    expect(validateFinanceSnapshot(snap, [...ids, "V000133"], null).join()).toMatch(/H9XX00001 is left out but wasn't one of the ids asked about/);
+
+    const many = build();
+    const extra = ["H1AA00001", "H1AA00002", "H1AA00003", "H1AA00004", "H1AA00005", "H1AA00006"];
+    many.members.X000001 = toMemberFinance({ chamber: "house" }, extra, [], fetchedAt);
+    many.unverified = Object.fromEntries(extra.map((id) => [id, "off"]));
+    expect(validateFinanceSnapshot(many, ids, null).join()).toMatch(/6 campaigns left out .* \(more than 5\)/);
+  });
+
+  it("doesn't count a campaign left out now as one whose reports disappeared", () => {
+    const prev = build();
+    const snap = build();
+    snap.members.K000367.campaigns = [];
+    snap.unverified = { S6MN00267: "off" };
+    expect(validateFinanceSnapshot(snap, ids, prev).join()).not.toMatch(/S6MN00267/);
+  });
+
   it("rejects an API key in a stored URL and a record with no source", () => {
     const leaked = build();
     leaked.sources[0].url += "&api_key=abc";
@@ -298,6 +355,7 @@ describe("financeFingerprint", () => {
     });
     expect(financeFingerprint(snap(["H8CA05035"]))).toBe(financeFingerprint(snap(["H8CA05035"])));
     expect(financeFingerprint(snap(["H8CA05035", "S8CA00001"]))).not.toBe(financeFingerprint(snap(["H8CA05035"])));
+    expect(financeFingerprint({ ...snap(["H8CA05035", "S8CA00001"]), unverified: { S8CA00001: "off" } })).not.toBe(financeFingerprint(snap(["H8CA05035", "S8CA00001"])));
   });
 });
 

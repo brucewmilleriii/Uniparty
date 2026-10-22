@@ -234,4 +234,10 @@ export interface FinanceSnapshot {
   sources: { url: string; sha256: string }[];
   /** Keyed by bioguide id; members with no FEC candidate id are left out. */
   members: Record<string, MemberFinance>;
+  /**
+   * Campaigns left out because the FEC's own figures for them don't add up (the lines don't sum
+   * to the totals, or the per-candidate record disagrees with the batch totals), keyed by
+   * candidate id, with the reason for each.
+   */
+  unverified?: Record<string, string>;
 }

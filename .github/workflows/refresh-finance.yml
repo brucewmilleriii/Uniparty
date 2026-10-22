@@ -52,7 +52,12 @@ jobs:
         if: steps.key.outputs.ready == 'true'
       - name: Check the live source for a sample of members (pull requests)
         if: steps.key.outputs.ready == 'true' && github.event_name == 'pull_request'
-        run: npm run ingest:finance -- --check --members 25
+        run: |
+          npm run ingest:finance -- --check --members 25
+          # The campaigns that failed every full run from 2026-10-18 to 2026-10-21: negative lines, first
+          # reports starting in late 2024, and V000133's H8NJ02166, whose lines are $1,000 off its totals
+          # (the check should leave that one out with the reason).
+          npm run ingest:finance -- --check --ids B001303,C001103,F000484,G000598,G000600,G000558,J000307,P000622,S001232,S001199,T000488,T000491,V000133,W000790
       - name: Fetch, validate and write campaign finance
         if: steps.key.outputs.ready == 'true' && github.event_name != 'pull_request'
         run: npm run ingest:finance
