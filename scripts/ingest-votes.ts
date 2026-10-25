@@ -9,7 +9,8 @@
  *   npm run ingest:votes -- --check    # fetch and validate only; write nothing
  *   npm run ingest:votes -- --force    # refetch every vote in the window
  *
- * Exits non-zero, leaving the existing snapshot untouched, if any vote fails validation.
+ * Exits non-zero, leaving the existing snapshot untouched, if any vote fails validation or
+ * neither chamber can be reached. If only one chamber is unreachable, its previous votes are kept.
  */
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
@@ -152,8 +153,24 @@ async function main() {
   const previous = force ? [] : (prev?.votes ?? []);
   const have = new Set(previous.map((v) => v.id));
 
-  await ingestHouse(have, previous);
-  await ingestSenate(have, lisToBioguide);
+  // senate.gov sometimes refuses GitHub's runners with HTTP 403. When one chamber can't be reached, keep
+  // its previous votes and still publish the other; fail only when neither can be reached.
+  const unreachable: string[] = [];
+  for (const [chamber, ingest] of [
+    ["House", () => ingestHouse(have, previous)],
+    ["Senate", () => ingestSenate(have, lisToBioguide)],
+  ] as const) {
+    try {
+      await ingest();
+    } catch (err) {
+      unreachable.push(chamber);
+      console.log(`::warning::${chamber} votes not refreshed, keeping the previous ones: ${(err as Error).message}`);
+    }
+  }
+  if (unreachable.length === 2) {
+    console.error("Neither chamber could be reached; keeping the previous snapshot.");
+    process.exit(1);
+  }
 
   if (errors.length) {
     console.error(`Votes failed validation (${errors.length} problems); keeping the previous snapshot.`);
